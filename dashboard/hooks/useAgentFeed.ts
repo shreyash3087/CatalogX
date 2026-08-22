@@ -36,14 +36,17 @@ export function useAgentFeed(wsUrl: string) {
           const data = JSON.parse(msg.data);
           // Handle bulk history payload on connect
           if (data.type === 'HISTORY' && Array.isArray(data.events)) {
-            setEvents(data.events.map((e: AgentEvent, i: number) => ({
+            setEvents(data.events.map((e: Record<string, unknown>, i: number) => ({
               ...e,
-              id: e.id || `hist_${i}`,
-            })));
+              // DB rows use 'action' column; normalize to 'type'
+              type: (e.type || e.action || 'UNKNOWN') as string,
+              id: (e.id as string) || `hist_${i}`,
+            })) as AgentEvent[]);
           } else {
-            // Single event
+            // Single event — normalize action→type for consistency
             const event: AgentEvent = {
               ...data,
+              type: data.type || data.action || 'UNKNOWN',
               id: data.id || `evt_${Date.now()}_${Math.random().toString(36).slice(2)}`,
               timestamp: data.timestamp || new Date().toISOString(),
             };

@@ -35,27 +35,41 @@ export function getEventMeta(type: string) {
 export function formatEventSummary(event: AgentEvent): string {
   switch (event.type) {
     case 'INSTRUCTION_PARSED':
-      return `Parsed: "${(event.instruction as string)?.slice(0, 60) || ''}"`;
-    case 'CATALOG_DISCOVERED':
-      return `${(event as Record<string,unknown> & { merchant?: string }).merchant} — ${(event as Record<string,unknown> & { products?: number }).products} products`;
-    case 'SEARCH_COMPLETED':
-      return `Found ${(event as Record<string,unknown> & { count?: number }).count} matches`;
-    case 'PRODUCT_SELECTED':
-      return (event as Record<string,unknown> & { selected_name?: string }).selected_name as string || '';
-    case 'ORDER_CREATED':
-      return `${(event as Record<string,unknown> & { razorpay_order_id?: string }).razorpay_order_id} — ₹${(event as Record<string,unknown> & { amount_inr?: string }).amount_inr}`;
+      return `Parsed: "${((event.instruction as string) || '').slice(0, 60)}"`;
+    case 'CATALOG_DISCOVERED': {
+      const m = event as Record<string,unknown>;
+      return `${m.merchant || ''} — ${m.products || 0} products`;
+    }
+    case 'SEARCH_COMPLETED': {
+      const m = event as Record<string,unknown>;
+      return `Found ${m.count || 0} matches`;
+    }
+    case 'PRODUCT_SELECTED': {
+      const m = event as Record<string,unknown>;
+      return (m.selected_name as string) || '';
+    }
+    case 'ORDER_CREATED': {
+      const m = event as Record<string,unknown>;
+      return `${m.razorpay_order_id || ''} — ₹${m.amount_inr || ''}`;
+    }
     case 'PAYMENT_VERIFIED':
-    case 'PAYMENT_CAPTURED':
-      return `Payment ID: ${(event as Record<string,unknown> & { razorpay_payment_id?: string }).razorpay_payment_id}`;
+    case 'PAYMENT_CAPTURED': {
+      const m = event as Record<string,unknown>;
+      return `Payment ID: ${m.razorpay_payment_id || ''}`;
+    }
     case 'GATE_CHECKED':
-      return event.reasoning?.slice(0, 80) || 'Gate evaluated';
+      return (event.reasoning || 'Gate evaluated').slice(0, 80);
     case 'STOCK_OUT':
-    case 'STOCK_GATE':
-      return `${(event as Record<string,unknown> & { product_name?: string }).product_name} — out of stock`;
-    case 'FALLBACK_SELECTED':
-      return `Fallback: ${(event as Record<string,unknown> & { fallback_name?: string }).fallback_name}`;
+    case 'STOCK_GATE': {
+      const m = event as Record<string,unknown>;
+      return `${m.product_name || ''} — out of stock`;
+    }
+    case 'FALLBACK_SELECTED': {
+      const m = event as Record<string,unknown>;
+      return `Fallback: ${m.fallback_name || ''}`;
+    }
     default:
-      return event.reasoning?.slice(0, 80) || event.type.replace(/_/g, ' ').toLowerCase();
+      return (event.reasoning || event.type.replace(/_/g, ' ').toLowerCase()).slice(0, 80);
   }
 }
 

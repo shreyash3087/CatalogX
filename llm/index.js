@@ -76,7 +76,7 @@ function getEmbedClient() {
 /**
  * Send a chat completion request.
  * @param {Array<{role: string, content: string}>} messages
- * @param {object} options - Optional overrides: temperature, max_tokens, response_format
+ * @param {object} options - Optional overrides: temperature, max_completion_tokens, response_format
  * @returns {Promise<string>} - The assistant's message content
  */
 async function chat(messages, options = {}) {
@@ -87,7 +87,8 @@ async function chat(messages, options = {}) {
     model: deployment,
     messages,
     temperature: options.temperature ?? 0.2,
-    max_tokens: options.max_tokens ?? 2048,
+    // GPT-5.x / o-series models require max_completion_tokens, not max_tokens
+    max_completion_tokens: options.max_completion_tokens ?? options.max_tokens ?? 2048,
     ...(options.response_format ? { response_format: options.response_format } : {}),
   });
 
@@ -101,14 +102,36 @@ async function chat(messages, options = {}) {
  * @returns {Promise<object>} - Parsed JSON object
  */
 async function chatJSON(messages, options = {}) {
-  const result = await chat(messages, {
-    ...options,
-    response_format: { type: 'json_object' },
-  });
+  // Inject JSON instruction into system message if not already present
+  const hasSystemMsg = messages.some(m => m.role === 'system');
+  const jsonMessages = hasSystemMsg
+    ? messages.map(m => m.role === 'system'
+        ? { ...m, content: m.content + '\n\nIMPORTANT: You MUST respond with valid JSON only. No markdown, no explanation, just pure JSON.' }
+        : m)
+    : [{ role: 'system', content: 'You must respond with valid JSON only. No markdown, no explanation.' }, ...messages];
+
+  // Try with response_format first (supported on most models)
+  let result;
   try {
-    return JSON.parse(result);
+    result = await chat(jsonMessages, {
+      ...options,
+      response_format: { type: 'json_object' },
+    });
+  } catch (err) {
+    // Fallback: retry without response_format if unsupported
+    if (err.message?.includes('response_format') || err.message?.includes('json_object')) {
+      result = await chat(jsonMessages, { ...options });
+    } else {
+      throw err;
+    }
+  }
+
+  // Strip markdown code fences if present
+  const cleaned = result.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  try {
+    return JSON.parse(cleaned);
   } catch (e) {
-    throw new Error(`LLM returned invalid JSON: ${result.slice(0, 200)}`);
+    throw new Error(`LLM returned invalid JSON: ${cleaned.slice(0, 200)}`);
   }
 }
 
