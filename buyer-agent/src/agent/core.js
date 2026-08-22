@@ -30,7 +30,10 @@ const { handleStockOut, handlePaymentFailure } = require('./recovery');
 const { AuditLogger } = require('../audit/logger');
 const { printReport } = require('../audit/reporter');
 
-const MERCHANT_URL = process.env.MERCHANT_SERVER_URL || 'http://localhost:3001';
+const MERCHANTS = [
+  'http://localhost:3001', // UrbanStride (Footwear)
+  'http://localhost:3002'  // TechCart (Electronics)
+];
 const MAX_RETRIES = parseInt(process.env.MAX_RETRIES) || 3;
 
 class BuyerAgent {
@@ -39,6 +42,7 @@ class BuyerAgent {
     this.agentId = `agent_catalogx_buyer`;
     this.audit = new AuditLogger(this.sessionId, this.agentId);
     this.excludedProductIds = [];
+    this.activeMerchantUrl = 'http://localhost:3001';
   }
 
   /**
@@ -64,9 +68,9 @@ class BuyerAgent {
 
       // ── STEP 2: Discover merchant catalog ──────────────────────────────
       console.log(chalk.bold('\n  Phase 2: Discovering merchant catalog...'));
-      const catalog = await this.discoverCatalog();
+      const catalog = await this.discoverCatalog(constraints);
       await this.audit.log('CATALOG_DISCOVERED',
-        { url: `${MERCHANT_URL}/.well-known/agent-catalog` },
+        { url: `${this.activeMerchantUrl}/.well-known/agent-catalog` },
         { merchant: catalog.merchant.name, products: catalog.catalog.total_products },
         `Discovered ${catalog.merchant.name} with ${catalog.catalog.total_products} products in ${catalog.catalog.categories.length} categories`
       );
@@ -215,14 +219,45 @@ class BuyerAgent {
 
   // ── Private methods ────────────────────────────────────────────────────────
 
-  async discoverCatalog() {
-    const resp = await axios.get(`${MERCHANT_URL}/.well-known/agent-catalog`, { timeout: 5000 });
-    return resp.data;
+  async discoverCatalog(constraints) {
+    const manifests = [];
+    
+    // Connect to all merchants in parallel
+    for (const url of MERCHANTS) {
+      try {
+        const resp = await axios.get(`${url}/.well-known/agent-catalog`, { timeout: 3000 });
+        manifests.push({ url, manifest: resp.data });
+      } catch (err) {
+        // Silent capture — ignore unreachable merchant
+      }
+    }
+
+    if (manifests.length === 0) {
+      throw new Error('No active merchants available in federation.');
+    }
+
+    // Category routing logic: match query category against merchant manifest categories
+    const category = constraints.category || '';
+    let selected = manifests[0]; // fallback default to first reachable
+
+    for (const item of manifests) {
+      const match = item.manifest.catalog.categories.some(
+        c => c.id === category || category.includes(c.id) || c.id.includes(category)
+      );
+      if (match) {
+        selected = item;
+        break;
+      }
+    }
+
+    // Set targeted URL
+    this.activeMerchantUrl = selected.url;
+    return selected.manifest;
   }
 
   async searchProducts(constraints, excludeIds = []) {
     const filters = buildSearchFilters(constraints);
-    const resp = await axios.post(`${MERCHANT_URL}/api/products/search`, {
+    const resp = await axios.post(`${this.activeMerchantUrl}/api/products/search`, {
       query: constraints.query || constraints.instruction,
       filters,
       limit: 10,
@@ -290,12 +325,12 @@ ${JSON.stringify(productList, null, 2)}`,
   }
 
   async checkStock(productId) {
-    const resp = await axios.get(`${MERCHANT_URL}/api/products/${productId}/stock`, { timeout: 5000 });
+    const resp = await axios.get(`${this.activeMerchantUrl}/api/products/${productId}/stock`, { timeout: 5000 });
     return resp.data;
   }
 
   async createOrder(product, constraints) {
-    const resp = await axios.post(`${MERCHANT_URL}/api/orders`, {
+    const resp = await axios.post(`${this.activeMerchantUrl}/api/orders`, {
       product_id: product.id,
       size: constraints.required_size || product.sizes[0],
       color: constraints.preferred_color || product.colors[0],
@@ -309,7 +344,7 @@ ${JSON.stringify(productList, null, 2)}`,
 
   async executePaymentWithRetry(razorpayOrderId) {
     const attempt = async () => {
-      const resp = await axios.post(`${MERCHANT_URL}/api/payments/simulate`, {
+      const resp = await axios.post(`${this.activeMerchantUrl}/api/payments/simulate`, {
         razorpay_order_id: razorpayOrderId,
         session_id: this.sessionId,
       }, { timeout: 10000 });
@@ -352,10 +387,11 @@ ${JSON.stringify(productList, null, 2)}`,
     console.log(chalk.blue(divider));
     console.log(chalk.white(`  Session : ${this.sessionId}`));
     console.log(chalk.white(`  Agent   : ${this.agentId}`));
-    console.log(chalk.white(`  Merchant: ${MERCHANT_URL}`));
+    console.log(chalk.white(`  Merchant: Federated Routing (Ports 3001/3002)`));
     console.log(chalk.blue(divider));
     console.log(chalk.bold(`\n  🎯 Goal: "${instruction}"\n`));
   }
+
 }
 
 module.exports = { BuyerAgent };

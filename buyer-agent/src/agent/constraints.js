@@ -24,7 +24,7 @@ async function parseInstruction(instruction) {
 Return a JSON object with these fields:
 {
   "intent": "buy",
-  "category": string or null,  // e.g. "running-shoes", "casual-sneakers", "hiking-boots", or null
+  "category": string or null,  // e.g. "running-shoes", "casual-sneakers", "hiking-boots", "electronics", or null
   "query": string,             // clean search query for the catalog (e.g. "running shoes lightweight")
   "budget_max_paise": number or null,  // max price in paise (₹1 = 100 paise). null if no budget mentioned
   "budget_min_paise": number or null,  // min price in paise. null if no min
@@ -36,7 +36,7 @@ Return a JSON object with these fields:
   "reasoning": string                  // brief explanation of how you parsed this
 }
 
-Category values must be one of: "running-shoes", "casual-sneakers", "hiking-boots", or null.
+Category values must be one of: "running-shoes", "casual-sneakers", "hiking-boots", "electronics", or null.
 Convert rupee amounts to paise (multiply by 100). E.g. ₹3000 → 300000 paise.`,
     },
     {

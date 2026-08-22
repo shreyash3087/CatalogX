@@ -13,7 +13,7 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('./init');
 
-const PRODUCTS = [
+const FOOTWEAR_PRODUCTS = [
   // ─── RUNNING SHOES ───────────────────────────────────────────────────────
   {
     id: 'prod_001',
@@ -323,13 +323,16 @@ const PRODUCTS = [
   },
 ];
 
+const PRODUCTS = process.env.MERCHANT_CATEGORY === 'electronics'
+  ? require('./seed-electronics').PRODUCTS_ELECTRONICS
+  : FOOTWEAR_PRODUCTS;
+
 function seedProducts() {
   const db = getDb();
 
   const existingCount = db.prepare('SELECT COUNT(*) as count FROM products').get();
   if (existingCount.count > 0) {
     console.log(`[Seed] Database already has ${existingCount.count} products. Skipping seed.`);
-    console.log('[Seed] To re-seed: DELETE FROM products; then run again.');
     return;
   }
 
@@ -351,13 +354,15 @@ function seedProducts() {
 
   insertAll(PRODUCTS);
 
-  console.log(`[Seed] ✅ Seeded ${PRODUCTS.length} products into UrbanStride catalog.`);
+  console.log(`[Seed] ✅ Seeded ${PRODUCTS.length} products into ${process.env.MERCHANT_NAME || 'merchant'} catalog.`);
   console.log('[Seed] Categories:');
   const cats = db.prepare("SELECT category, COUNT(*) as count FROM products GROUP BY category").all();
   cats.forEach(c => console.log(`  - ${c.category}: ${c.count} products`));
 
   const oos = PRODUCTS.filter(p => p.stock === 0);
-  console.log(`[Seed] Out-of-stock items (for failure-case testing): ${oos.map(p => p.name).join(', ')}`);
+  if (oos.length > 0) {
+    console.log(`[Seed] Out-of-stock items: ${oos.map(p => p.name).join(', ')}`);
+  }
 }
 
 // Run if called directly
@@ -366,3 +371,4 @@ if (require.main === module) {
 }
 
 module.exports = { seedProducts, PRODUCTS };
+

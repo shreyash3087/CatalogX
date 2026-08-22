@@ -60,6 +60,9 @@ app.use((req, _res, next) => {
   next();
 });
 
+// Serve human storefront pages
+app.use(express.static(path.join(__dirname, '../public')));
+
 // ─── Routes ─────────────────────────────────────────────────────────────────
 app.use('/', discoveryRouter);
 app.use('/api/products', productsRouter);

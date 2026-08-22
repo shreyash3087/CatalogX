@@ -8,7 +8,8 @@ const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.resolve(__dirname, '../../data/catalogx.db');
+const DB_NAME = process.env.DB_NAME || 'catalogx.db';
+const DB_PATH = path.resolve(__dirname, `../../data/${DB_NAME}`);
 const SCHEMA_PATH = path.resolve(__dirname, 'schema.sql');
 
 let _db = null;
