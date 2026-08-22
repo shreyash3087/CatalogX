@@ -89,6 +89,39 @@ app.get('/api/audit', (req, res) => {
   }
 });
 
+// ─── Agent pushes audit entries here (from buyer-agent) ─────────────────────
+app.post('/api/audit/agent', (req, res) => {
+  try {
+    const db = getDb();
+    const { id, session_id, step, action, input_data, output_data, reasoning, agent_id, merchant_id } = req.body;
+    const { v4: uuidv4 } = require('uuid');
+
+    db.prepare(`
+      INSERT OR IGNORE INTO audit_log
+        (id, session_id, step, action, input_data, output_data, reasoning, merchant_id, agent_id)
+      VALUES
+        (@id, @session_id, @step, @action, @input_data, @output_data, @reasoning, @merchant_id, @agent_id)
+    `).run({
+      id: id || uuidv4(),
+      session_id: session_id || 'unknown',
+      step: step || 0,
+      action,
+      input_data: typeof input_data === 'string' ? input_data : JSON.stringify(input_data),
+      output_data: typeof output_data === 'string' ? output_data : JSON.stringify(output_data),
+      reasoning: reasoning || null,
+      merchant_id: merchant_id || process.env.MERCHANT_ID,
+      agent_id: agent_id || null,
+    });
+
+    // Broadcast to dashboard
+    broadcast({ ...req.body, type: action, timestamp: req.body.timestamp || new Date().toISOString() });
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save audit entry', details: err.message });
+  }
+});
+
 // ─── Health check ───────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   const db = getDb();
