@@ -1,0 +1,21 @@
+{
+  "name": "catalogx",
+  "version": "1.0.0",
+  "description": "CatalogX — Agentic Commerce Platform for Razorpay AI Buildathon",
+  "private": true,
+  "workspaces": [
+    "merchant-server",
+    "buyer-agent",
+    "dashboard"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=merchant-server\" \"npm run dev --workspace=buyer-agent\" \"npm run dev --workspace=dashboard\"",
+    "merchant": "npm run dev --workspace=merchant-server",
+    "agent": "npm run start --workspace=buyer-agent",
+    "dashboard": "npm run dev --workspace=dashboard",
+    "demo": "node demo.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

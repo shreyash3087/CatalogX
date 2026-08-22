@@ -1,0 +1,15 @@
+{
+  "name": "@catalogx/llm",
+  "version": "1.0.0",
+  "description": "CatalogX LLM abstraction layer — swap providers without touching agent code",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "@azure/openai": "^2.0.0",
+    "openai": "^4.67.0",
+    "dotenv": "^16.4.5"
+  }
+}
