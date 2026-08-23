@@ -39,7 +39,7 @@ export default function GatingIndicator({ tier, amountPaise, budgetPaise }: Prop
             </span>
           </span>
           {budgetPaise != null && (
-            <span class="text-slate-500 font-medium">
+            <span className="text-slate-500 font-medium">
               Stated Limit: <strong className="text-slate-700">₹{(budgetPaise / 100).toLocaleString('en-IN')}</strong>
             </span>
           )}

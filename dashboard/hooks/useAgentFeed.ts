@@ -8,7 +8,7 @@ export type AgentEvent = {
   session_id?: string;
   timestamp: string;
   reasoning?: string;
-  [key: string]: unknown;
+  [key: string]: any;
 };
 
 type WSState = 'connecting' | 'connected' | 'disconnected';

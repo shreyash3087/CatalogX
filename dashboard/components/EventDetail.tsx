@@ -44,7 +44,7 @@ export default function EventDetail({ event }: Props) {
       {/* Rationale / Explanation */}
       {reasoning && (
         <div className="space-y-1.5">
-          <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reasoning / Execution Note</h4>
+          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reasoning / Execution Note</h4>
           <div className="p-4 rounded-xl bg-slate-50 border-l-4 border-blue-500 text-xs text-slate-600 leading-relaxed font-medium">
             {reasoning}
           </div>
@@ -54,7 +54,7 @@ export default function EventDetail({ event }: Props) {
       {/* Input data block */}
       {input_data && (
         <div className="space-y-1.5">
-          <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Input Parameter Block</h4>
+          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Input Parameter Block</h4>
           <pre className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-300 font-mono overflow-x-auto max-h-[300px]">
             {typeof input_data === 'string'
               ? input_data
@@ -66,7 +66,7 @@ export default function EventDetail({ event }: Props) {
       {/* Output data block */}
       {output_data && (
         <div className="space-y-1.5">
-          <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output Response Payload</h4>
+          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output Response Payload</h4>
           <pre className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-emerald-400 font-mono overflow-x-auto max-h-[300px]">
             {typeof output_data === 'string'
               ? output_data
@@ -78,7 +78,7 @@ export default function EventDetail({ event }: Props) {
       {/* Additional fields */}
       {Object.keys(rest).length > 0 && (
         <div className="space-y-1.5">
-          <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Event Metadata Context</h4>
+          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Event Metadata Context</h4>
           <pre className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-400 font-mono overflow-x-auto">
             {JSON.stringify(rest, null, 2)}
           </pre>
