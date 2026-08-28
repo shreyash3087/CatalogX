@@ -12,6 +12,7 @@ const Razorpay = require('razorpay');
 const { v4: uuidv4 } = require('uuid');
 const { getDb } = require('../db/init');
 const { broadcast } = require('../services/auditBroadcast');
+const { saveOrder } = require('../db/mongo');
 
 const router = express.Router();
 
@@ -147,6 +148,24 @@ router.post('/', async (req, res) => {
       shipping_postal_code: shipPostalCode,
       shipping_country: shipCountry,
     });
+
+    // Persist to MongoDB Atlas
+    saveOrder({
+      orderId,
+      merchantId: process.env.MERCHANT_ID || 'merchant_urbanstride_001',
+      merchantName: process.env.MERCHANT_NAME || 'UrbanStride Footwear',
+      productId: product.id,
+      productName: product.name,
+      amountInr: amount_paise / 100,
+      amountDisplay: `₹${(amount_paise / 100).toLocaleString('en-IN')}`,
+      currency: 'INR',
+      status: 'CREATED',
+      customer: { name: custName, email: custEmail, phone: custPhone },
+      shippingAddress: { street: shipStreet, city: shipCity, state: shipState, postal_code: shipPostalCode, country: shipCountry },
+      razorpayOrderId: razorpayOrder.id,
+      receipt: razorpayOrder.receipt,
+      gateTier: amount_paise <= 150000 ? 'AUTO' : '2FA',
+    }).catch((e) => console.warn('[MongoDB] saveOrder err:', e.message));
 
     // Broadcast to dashboard
     broadcast({

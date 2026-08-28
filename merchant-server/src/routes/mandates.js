@@ -17,6 +17,7 @@ const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const { getDb } = require('../db/init');
 const { broadcast } = require('../services/auditBroadcast');
+const { saveMandate } = require('../db/mongo');
 
 const router = express.Router();
 
@@ -113,6 +114,18 @@ router.post('/verify', async (req, res) => {
       protocol: 'NPCI UAP / Razorpay TokenHQ',
       expires_at: expiresAt,
     };
+
+    // Save to MongoDB Atlas
+    saveMandate({
+      mandateToken,
+      userEmail: req.body.customer_email || 'owner@catalogx.ai',
+      maxLimitInr: limitPaise / 100,
+      status: 'ACTIVE',
+      authPaymentId: razorpay_payment_id,
+      authOrderId: razorpay_order_id,
+      protocol: 'NPCI UAP / Razorpay TokenHQ',
+      expiresAt,
+    }).catch((err) => console.warn('[MongoDB] saveMandate err:', err.message));
 
     // Broadcast mandate registration to dashboard WebSocket
     broadcast({

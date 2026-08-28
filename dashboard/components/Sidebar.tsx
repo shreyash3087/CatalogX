@@ -218,6 +218,11 @@ export default function Sidebar({
               <img
                 src={user.avatar}
                 alt={user.name}
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = 'none';
+                }}
                 className="w-6 h-6 rounded-full object-cover border border-emerald-500 flex-shrink-0"
               />
             ) : user.isLoggedIn ? (

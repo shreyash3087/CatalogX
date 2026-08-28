@@ -30,6 +30,14 @@ const path = require('path');
 const { getDb } = require('./db/init');
 const { seedProducts } = require('./db/seed');
 const { initWebSocket, broadcast } = require('./services/auditBroadcast');
+const {
+  connectMongo,
+  saveUserProfile,
+  getUserProfile,
+  saveChatSession,
+  getChatSessions,
+  getOrders: getMongoOrders,
+} = require('./db/mongo');
 
 const discoveryRouter = require('./routes/discovery');
 const productsRouter = require('./routes/products');
@@ -195,6 +203,53 @@ app.post('/api/agent/title', async (req, res) => {
   }
 });
 
+// ─── MongoDB User Profile Sync ───────────────────────────────────────────────
+app.post('/api/users/profile', async (req, res) => {
+  try {
+    const profile = req.body;
+    if (!profile || !profile.email) {
+      return res.status(400).json({ error: 'Missing user email' });
+    }
+    const saved = await saveUserProfile(profile);
+    res.json({ success: true, user: saved });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save user profile', details: err.message });
+  }
+});
+
+app.get('/api/users/profile', async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Missing email parameter' });
+    const user = await getUserProfile(email);
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch user profile', details: err.message });
+  }
+});
+
+// ─── MongoDB Chat Sessions Sync ─────────────────────────────────────────────
+app.post('/api/sessions/save', async (req, res) => {
+  try {
+    const { sessionId, userEmail, title, messages, events } = req.body;
+    if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
+    const saved = await saveChatSession({ sessionId, userEmail, title, messages, events });
+    res.json({ success: true, session: saved });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save chat session', details: err.message });
+  }
+});
+
+app.get('/api/sessions', async (req, res) => {
+  try {
+    const { email } = req.query;
+    const sessions = await getChatSessions(email);
+    res.json({ sessions });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch chat sessions', details: err.message });
+  }
+});
+
 // ─── Health check ───────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   const db = getDb();
@@ -210,6 +265,7 @@ app.get('/health', (req, res) => {
     orders: orderCount,
     razorpay_configured: !!process.env.RAZORPAY_KEY_ID,
     llm_configured: !!process.env.AZURE_OPENAI_API_KEY,
+    mongodb_configured: !!process.env.MONGODB_URI,
     timestamp: new Date().toISOString(),
   });
 });
@@ -233,6 +289,9 @@ async function start() {
   // Init DB and seed if needed
   getDb();
   seedProducts();
+
+  // Connect to MongoDB Atlas
+  connectMongo().catch((err) => console.warn('[MongoDB] Startup connect notice:', err.message));
 
   // Attach WebSocket server
   initWebSocket(server);

@@ -330,7 +330,9 @@ export default function Dashboard() {
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
         setUserProfile(parsedUser);
+
         if (parsedUser.isLoggedIn) {
+          // 1. Fetch mandate status
           fetch('http://localhost:3001/api/mandates/status')
             .then((res) => res.json())
             .then((data) => {
@@ -339,6 +341,38 @@ export default function Dashboard() {
               }
             })
             .catch(() => {});
+
+          // 2. Fetch synced profile from MongoDB
+          if (parsedUser.email) {
+            fetch(`http://localhost:3001/api/users/profile?email=${encodeURIComponent(parsedUser.email)}`)
+              .then((r) => r.json())
+              .then((d) => {
+                if (d && d.user) {
+                  setUserProfile((prev) => {
+                    const merged = { ...prev, ...d.user, isLoggedIn: true };
+                    localStorage.setItem('catalogx_user', JSON.stringify(merged));
+                    return merged;
+                  });
+                }
+              })
+              .catch(() => {});
+
+            // 3. Fetch past sessions from MongoDB
+            fetch(`http://localhost:3001/api/sessions?email=${encodeURIComponent(parsedUser.email)}`)
+              .then((r) => r.json())
+              .then((d) => {
+                if (d && d.sessions && d.sessions.length > 0) {
+                  const titles: Record<string, string> = {};
+                  for (const s of d.sessions) {
+                    if (s.sessionId && s.title) {
+                      titles[s.sessionId] = s.title;
+                    }
+                  }
+                  setSessionTitles((prev) => ({ ...prev, ...titles }));
+                }
+              })
+              .catch(() => {});
+          }
         }
       }
     } catch {}
@@ -533,6 +567,20 @@ export default function Dashboard() {
     };
     setHumanMessagesBySession(updatedMap);
     localStorage.setItem('catalogx_human_msgs', JSON.stringify(updatedMap));
+
+    // Sync session to MongoDB Atlas
+    if (userProfile.isLoggedIn && userProfile.email) {
+      fetch('http://localhost:3001/api/sessions/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: targetSession,
+          userEmail: userProfile.email,
+          title: sessionTitles[targetSession] || 'New Chat',
+          messages: updatedMap[targetSession],
+        }),
+      }).catch(() => {});
+    }
 
     setChatInput('');
     setIsSpawning(true);
