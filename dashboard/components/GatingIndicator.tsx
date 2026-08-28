@@ -1,109 +1,106 @@
 'use client';
 
-type GateTier = 'AUTO' | 'NOTIFY' | 'CONFIRM' | 'REJECT' | null;
+import React from 'react';
 
 type Props = {
-  tier: GateTier;
-  amountPaise?: number;
-  budgetPaise?: number;
+  currentTier: string | null;
 };
 
 const TIERS = [
-  { key: 'AUTO',    label: 'Auto',    threshold: '≤ ₹1,500', bgClass: 'bg-emerald-50 text-emerald-700 border-emerald-200', pct: 25 },
-  { key: 'NOTIFY',  label: 'Notify',  threshold: '≤ ₹3,000', bgClass: 'bg-amber-50 text-amber-700 border-amber-200',   pct: 50 },
-  { key: 'CONFIRM', label: 'Confirm', threshold: '≤ ₹5,000', bgClass: 'bg-orange-50 text-orange-700 border-orange-200', pct: 75 },
-  { key: 'REJECT',  label: 'Reject',  threshold: '> ₹5,000', bgClass: 'bg-rose-50 text-rose-700 border-rose-200',     pct: 100 },
+  {
+    tier: 'AUTO',
+    label: 'Tier 1: Auto Mandate',
+    threshold: '≤ ₹1,500',
+    description: 'Executes autonomously via pre-authorized mandate with zero human friction.',
+    badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+    dotColor: '#10b981',
+    activeBg: 'bg-emerald-950/20 border-emerald-500/50 shadow-emerald-500/10',
+  },
+  {
+    tier: 'REVIEW',
+    label: 'Tier 2: 1-Click Consent',
+    threshold: '₹1,501 – ₹5,000',
+    description: 'Order created on Razorpay. Requires 1-click human checkout authorization.',
+    badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+    dotColor: '#f59e0b',
+    activeBg: 'bg-amber-950/20 border-amber-500/50 shadow-amber-500/10',
+  },
+  {
+    tier: 'HIGH_VALUE_2FA',
+    label: 'Tier 3: High-Value 2FA Gated',
+    threshold: '> ₹5,000',
+    description: 'High-ticket purchase. Mandatory 2FA OTP verification required on Razorpay.',
+    badgeColor: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
+    dotColor: '#f97316',
+    activeBg: 'bg-orange-950/20 border-orange-500/50 shadow-orange-500/10',
+  },
+  {
+    tier: 'REJECT',
+    label: 'Tier 4: Policy Rejection',
+    threshold: 'Exceeds Budget',
+    description: 'Immediate refusal. Product price exceeds user requested budget constraint.',
+    badgeColor: 'bg-red-500/10 text-red-400 border-red-500/30',
+    dotColor: '#ef4444',
+    activeBg: 'bg-red-950/20 border-red-500/50 shadow-red-500/10',
+  },
 ];
 
-const TIER_COLORS: Record<string, string> = {
-  AUTO:    'rgb(16, 185, 129)', // Emerald
-  NOTIFY:  'rgb(245, 158, 11)', // Amber
-  CONFIRM: 'rgb(249, 115, 22)', // Orange
-  REJECT:  'rgb(239, 68, 68)',  // Rose
-};
-
-export default function GatingIndicator({ tier, amountPaise, budgetPaise }: Props) {
-  const activeTier = TIERS.find(t => t.key === tier);
-  const fillPct = activeTier?.pct || 0;
-  const fillColor = tier ? TIER_COLORS[tier] : 'rgb(226, 232, 240)';
-
+export default function GatingIndicator({ currentTier }: Props) {
   return (
-    <div className="space-y-4">
-      {/* Title / Values */}
-      {amountPaise != null && (
-        <div className="flex items-center justify-between text-sm">
-          <span>
-            <span className="text-slate-400 font-medium">Purchase Amount: </span>
-            <span className="font-extrabold text-base" style={{ color: fillColor }}>
-              ₹{(amountPaise / 100).toLocaleString('en-IN')}
-            </span>
-          </span>
-          {budgetPaise != null && (
-            <span className="text-slate-500 font-medium">
-              Stated Limit: <strong className="text-slate-700">₹{(budgetPaise / 100).toLocaleString('en-IN')}</strong>
-            </span>
-          )}
+    <div className="space-y-4 p-4">
+      {/* Banner */}
+      <div className="bg-[#171a22] border border-[#232837] rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <h4 className="text-xs font-bold text-slate-200">
+            Autonomous Spend Governor (Guardrails)
+          </h4>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            Every transaction is bounded, explainable, and gated before touching Razorpay APIs.
+          </p>
         </div>
-      )}
-
-      {/* Progress Track */}
-      <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden relative border border-slate-200/50">
-        <div
-          className="h-full rounded-full transition-all duration-500 ease-out"
-          style={{
-            width: `${fillPct}%`,
-            background: `linear-gradient(90deg, rgb(16, 185, 129), ${fillColor})`,
-          }}
-        />
+        {currentTier ? (
+          <div className="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 animate-pulse">
+            Active: {currentTier}
+          </div>
+        ) : (
+          <div className="px-3 py-1 rounded-full text-[11px] font-mono text-slate-400 bg-[#0f1217] border border-[#222736]">
+            Idle
+          </div>
+        )}
       </div>
 
-      {/* Grid Indicators */}
-      <div className="grid grid-cols-4 gap-2">
+      {/* Tier Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {TIERS.map((t) => {
-          const isActive = tier === t.key;
+          const isActive = currentTier === t.tier;
           return (
             <div
-              key={t.key}
-              className={`p-2.5 rounded-lg border text-center transition-all ${
-                isActive 
-                  ? `${t.bgClass} font-bold scale-[1.02] shadow-sm` 
-                  : 'bg-white text-slate-400 border-slate-200'
+              key={t.tier}
+              className={`p-4 rounded-xl border transition-all duration-200 ${
+                isActive
+                  ? `${t.activeBg} shadow-lg scale-[1.01]`
+                  : 'bg-[#141720] border-[#222736] hover:border-[#2d3448]'
               }`}
             >
-              <div className="text-xs font-semibold uppercase tracking-wider leading-none mb-1">{t.label}</div>
-              <div className="text-[9px] opacity-80 leading-none">{t.threshold}</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: t.dotColor }}
+                  />
+                  <span className="text-xs font-bold text-slate-200">{t.label}</span>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${t.badgeColor}`}>
+                  {t.threshold}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                {t.description}
+              </p>
             </div>
           );
         })}
       </div>
-
-      {/* Rationale Display */}
-      {tier && (
-        <div 
-          className="p-4 rounded-xl text-xs font-medium border flex items-start gap-3 transition-opacity"
-          style={{
-            backgroundColor: `${fillColor}08`,
-            borderColor: `${fillColor}20`,
-            color: fillColor
-          }}
-        >
-          <span className="text-base">🛡️</span>
-          <div>
-            <div className="font-bold text-slate-800 uppercase tracking-wide text-[10px] mb-0.5">Spend Gate Enforcement</div>
-            {tier === 'AUTO'    && 'Automatically Approved — purchase amount resides safely within the user auto-approve credit limit.'}
-            {tier === 'NOTIFY'  && 'Spending Notification — amount matches intent budget limits. Alerting owner, proceeding automatically in 5s.'}
-            {tier === 'CONFIRM' && 'Interactive Clearance Required — item price exceeds explicit budget guidelines. Verification request sent.'}
-            {tier === 'REJECT'  && 'Transaction Terminated — total cost breaches absolute structural budget ceilings. Order cancelled.'}
-          </div>
-        </div>
-      )}
-
-      {!tier && (
-        <div className="text-center py-4 text-xs text-slate-400 italic">
-          Transaction gating evaluation pending agent product selection.
-        </div>
-      )}
     </div>
   );
-
 }

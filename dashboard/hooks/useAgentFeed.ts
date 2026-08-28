@@ -34,13 +34,35 @@ export function useAgentFeed(wsUrl: string) {
       ws.onmessage = (msg) => {
         try {
           const data = JSON.parse(msg.data);
+          const parsePayload = (val: any) => {
+            if (typeof val === 'string') {
+              try { return JSON.parse(val); } catch { return val; }
+            }
+            return val;
+          };
+
+          const normalizeTimestamp = (ts: any): string => {
+            if (!ts) return new Date().toISOString();
+            if (typeof ts === 'string') {
+              if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(ts)) {
+                return ts.replace(' ', 'T') + 'Z';
+              }
+              if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(ts)) {
+                return ts + 'Z';
+              }
+            }
+            try { return new Date(ts).toISOString(); } catch { return new Date().toISOString(); }
+          };
+
           // Handle bulk history payload on connect
           if (data.type === 'HISTORY' && Array.isArray(data.events)) {
-            setEvents(data.events.map((e: Record<string, unknown>, i: number) => ({
+            setEvents(data.events.map((e: Record<string, any>, i: number) => ({
               ...e,
-              // DB rows use 'action' column; normalize to 'type'
               type: (e.type || e.action || 'UNKNOWN') as string,
               id: (e.id as string) || `hist_${i}`,
+              timestamp: normalizeTimestamp(e.timestamp),
+              input_data: parsePayload(e.input_data),
+              output_data: parsePayload(e.output_data),
             })) as AgentEvent[]);
           } else {
             // Single event — normalize action→type for consistency
@@ -48,9 +70,11 @@ export function useAgentFeed(wsUrl: string) {
               ...data,
               type: data.type || data.action || 'UNKNOWN',
               id: data.id || `evt_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-              timestamp: data.timestamp || new Date().toISOString(),
+              timestamp: normalizeTimestamp(data.timestamp),
+              input_data: parsePayload(data.input_data),
+              output_data: parsePayload(data.output_data),
             };
-            setEvents(prev => [...prev, event].slice(-200)); // keep last 200
+            setEvents(prev => [...prev, event].slice(-300));
           }
         } catch (_) {}
       };

@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UrbanStride Footwear</title>
+  <meta name="description" content="Premium sneakers crafted for comfort, style and performance. Discover curated collections and seamless Razorpay checkout.">
+
+  <!-- Refined Typography: Barlow Condensed (Headlines) & Plus Jakarta Sans (UI/Body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/assets/store-notifications.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            heading: ['"Barlow Condensed"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              dark: '#0A0B0D',
+              card: '#121418',
+              cardHover: '#181A20',
+              cream: '#EFECE7',
+              creamDark: '#DFDCD5',
+              accent: '#3B82F6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0A0B0D;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #24272E;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3B82F6;
+    }
+
+    /* Lenis Smooth Scroll */
+    html.lenis, html.lenis body {
+      height: auto;
+    }
+    .lenis.lenis-smooth {
+      scroll-behavior: auto !important;
+    }
+    .lenis.lenis-smooth [data-lenis-prevent] {
+      overscroll-behavior: contain;
+    }
+
+    /* Collection Card Hover Effects */
+    .collection-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.25rem;
+      background: #121418;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+    .collection-card:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8);
+    }
+    .collection-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .collection-card:hover .collection-img {
+      transform: scale(1.1);
+    }
+    .collection-content-bottom {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 65%, transparent 100%);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 20;
+    }
+    .collection-hover-details {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .collection-card:hover .collection-hover-details {
+      max-height: 120px;
+      opacity: 1;
+      margin-top: 0.75rem;
+    }
+    .collection-card:hover .collection-content-bottom {
+      padding-top: 3rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.85) 75%, transparent 100%);
+    }
+
+    .writing-vertical {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+  </style>
+</head>
+
+<body class="bg-[#0A0B0D] text-slate-100 font-sans antialiased overflow-x-hidden selection:bg-white selection:text-black">
+
+  <!-- 1. NAVIGATION BAR (PURE GLASS - NO BG, NO BORDER) -->
+  <header class="fixed top-0 left-0 right-0 z-50 nav-glass-pure">
+    <div class="max-w-7xl mx-auto px-6 sm:px-10 h-20 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <a href="#" class="flex items-center gap-3.5 group">
+        <div class="w-11 h-9 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+          <img src="/assets/urbanstride/logo.png" alt="UrbanStride Logo" class="w-full h-full object-contain drop-shadow-[0_4px_10px_rgba(255,255,255,0.2)]">
+        </div>
+        <div>
+          <div class="font-heading font-semibold text-2xl text-white tracking-wider leading-none">
+            UrbanStride
+          </div>
+          <span class="text-[8px] font-bold tracking-[0.3em] text-slate-300 block mt-0.5 uppercase font-mono">FOOTWEAR</span>
+        </div>
+      </a>
+
+      <!-- Center Navigation Links -->
+      <nav class="hidden md:flex items-center gap-9 font-medium text-xs sm:text-sm text-slate-200">
+        <a href="/products.html" class="hover:text-white transition-colors font-bold text-white">Shop All</a>
+        <a href="#collections" class="hover:text-white transition-colors">Collections</a>
+        <a href="#brands" class="hover:text-white transition-colors">Brands</a>
+        <a href="/products.html?category=running-shoes" class="hover:text-white transition-colors">New Arrivals</a>
+        <a href="#about" class="hover:text-white transition-colors">About Us</a>
+      </nav>
+
+      <!-- Right Actions -->
+      <div class="flex items-center gap-5">
+        <button onclick="scrollToFeatured()" class="text-slate-200 hover:text-white transition-colors p-1.5" title="Search">
+          <i class="fa-solid fa-magnifying-glass text-sm"></i>
+        </button>
+
+        <button onclick="toggleCart()" class="relative text-slate-200 hover:text-white transition-colors p-1.5 flex items-center" title="Cart">
+          <i class="fa-solid fa-bag-shopping text-sm"></i>
+          <span id="nav-cart-badge" class="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center font-mono ml-1">2</span>
+        </button>
+
+        <!-- Google Auth Mount -->
+        <div class="store-google-auth-mount"></div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- 2. HERO SECTION -->
+  <section id="hero" class="relative min-h-[95vh] pt-32 pb-16 flex items-center overflow-hidden bg-cover bg-center bg-no-repeat" style="background-image: url('/assets/urbanstride/hero_bg.png'); background-color: #0A0B0D;">
+    
+    <!-- Subtle gradient overlay on left for text legibility -->
+    <div class="absolute inset-0 bg-gradient-to-r from-[#0A0B0D]/90 via-[#0A0B0D]/50 to-transparent pointer-events-none z-0"></div>
+
+    <!-- Large Rock Base Layer anchored to absolute bottom-right of the entire section -->
+    <div class="absolute bottom-0 right-0 w-full max-w-[850px] lg:max-w-[1050px] xl:max-w-[1200px] z-10 pointer-events-none">
+      <img src="/assets/urbanstride/hero_layer_2_rock.png" alt="Rock Base" class="w-full h-auto object-contain drop-shadow-[0_25px_50px_rgba(0,0,0,0.95)]">
+    </div>
+    
+    <!-- Right Social & Vertical Scroll Bar -->
+    <div class="hidden xl:flex flex-col items-center gap-6 absolute right-8 top-1/2 -translate-y-1/2 z-30 text-slate-400 text-xs font-mono">
+      <div class="writing-vertical uppercase text-[9px] tracking-[0.25em] text-slate-300 mb-1">
+        SCROLL TO EXPLORE
+      </div>
+      <div class="w-[1px] h-10 bg-slate-600 mb-1"></div>
+      <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-instagram"></i></a>
+      <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
+      <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-x-twitter"></i></a>
+    </div>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto px-6 sm:px-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center z-20">
+      
+      <!-- Hero Left: Headlines & Actions -->
+      <div class="lg:col-span-6 space-y-6 text-left z-20">
+        
+        <div class="text-xs font-mono uppercase tracking-[0.25em] text-slate-300 font-semibold">
+          NEW COLLECTION 2026
+        </div>
+
+        <h1 class="font-heading font-semibold text-5xl sm:text-7xl xl:text-[86px] leading-[0.93] tracking-tight uppercase text-white drop-shadow-md">
+          STEP INTO <br>
+          EXTRAORDINARY
+        </h1>
+
+        <p class="text-xs sm:text-sm text-slate-300 font-normal max-w-md leading-relaxed">
+          Premium sneakers crafted for comfort, style and performance.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-wrap items-center gap-3.5 pt-2">
+          <a href="/products.html" class="px-7 py-3.5 rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-slate-200 transition-all flex items-center gap-2 shadow-xl active:scale-95">
+            <span>SHOP COLLECTION</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </a>
+          <a href="#brands" class="px-7 py-3.5 rounded-lg border border-white/30 bg-white/5 backdrop-blur-md text-white font-bold text-xs uppercase tracking-wider hover:bg-white/15 hover:border-white transition-all">
+            EXPLORE BRANDS
+          </a>
+        </div>
+
+        <!-- 3 Trust Badges -->
+        <div class="grid grid-cols-3 gap-4 pt-6 border-t border-white/15 max-w-lg">
+          <div class="flex items-center gap-2.5">
+            <i class="fa-regular fa-circle-check text-slate-200 text-sm"></i>
+            <div>
+              <div class="text-xs font-bold text-white leading-tight">100% Authentic</div>
+              <div class="text-[10px] text-slate-300">Sourced Genuine</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <i class="fa-solid fa-rotate-left text-slate-200 text-sm"></i>
+            <div>
+              <div class="text-xs font-bold text-white leading-tight">Easy Returns</div>
+              <div class="text-[10px] text-slate-300">Hassle Free</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <i class="fa-solid fa-truck-fast text-slate-200 text-sm"></i>
+            <div>
+              <div class="text-xs font-bold text-white leading-tight">Free Shipping</div>
+              <div class="text-[10px] text-slate-300">On all orders</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hero Right: Floating Jordan & Glassmorphic Info Card -->
+      <div class="lg:col-span-6 relative flex items-center justify-center min-h-[500px] lg:min-h-[620px] z-20">
+        
+        <!-- Large Floating Air Jordan 1 Shoe Layer -->
+        <div id="hero-shoe" class="relative z-20 w-full max-w-[550px] lg:max-w-[650px] scale-110 lg:scale-125 transition-transform duration-300 hover:scale-130 cursor-pointer -mt-10" onclick="openProductModal('prod_009')">
+          <img src="/assets/urbanstride/hero_layer_1_shoes.png" alt="Air Jordan 1 High OG Shadow" class="w-full h-auto object-contain drop-shadow-[0_45px_60px_rgba(0,0,0,0.95)]">
+        </div>
+
+        <!-- Floating Glassmorphic Info Card -->
+        <div class="absolute bottom-12 sm:bottom-16 right-2 sm:right-6 z-30 backdrop-blur-2xl bg-white/[0.12] border border-white/30 rounded-2xl p-4 flex items-center gap-4 shadow-[0_16px_40px_rgba(0,0,0,0.6)] cursor-pointer hover:border-white/50 hover:bg-white/[0.18] transition-all duration-300 group" onclick="openProductModal('prod_009')">
+          <div class="space-y-0.5 text-left">
+            <div class="text-xs font-semibold text-white tracking-wide">Air Jordan 1</div>
+            <div class="text-[11px] text-slate-200 font-normal">High OG 'Shadow'</div>
+            <div class="flex items-center gap-1 text-amber-400 text-[10px] pt-0.5">
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star"></i>
+              <i class="fa-solid fa-star-half-stroke"></i>
+              <span class="text-slate-100 font-bold ml-1 font-mono">4.8</span>
+            </div>
+            <div class="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 pt-1.5 group-hover:text-blue-400 transition-colors">
+              <span>EXPLORE</span>
+              <i class="fa-solid fa-arrow-right text-[9px] group-hover:translate-x-1 transition-transform"></i>
+            </div>
+          </div>
+          <div class="w-16 h-16 rounded-xl bg-black/40 backdrop-blur-md flex items-center justify-center p-1.5 border border-white/20 group-hover:scale-105 transition-transform">
+            <img src="/assets/urbanstride/hero_layer_1_shoes.png" alt="Thumbnail" class="w-full h-full object-contain -rotate-12">
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 3. TOP BRANDS BAR -->
+  <section id="brands" class="py-10 bg-[#0E0F12] border-y border-white/10">
+    <div class="max-w-7xl mx-auto px-6 sm:px-12 lg:px-16 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-[11px] font-mono font-bold uppercase tracking-[0.25em] text-slate-400 flex-shrink-0">
+        TOP BRANDS
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center md:justify-end gap-7 sm:gap-12 text-slate-400 font-heading font-semibold tracking-wider text-xl sm:text-2xl">
+        <span class="hover:text-white transition-colors cursor-pointer" onclick="scrollToFeatured()">NIKE</span>
+        <span class="hover:text-white transition-colors cursor-pointer" onclick="scrollToFeatured()">ADIDAS</span>
+        <span class="hover:text-white transition-colors cursor-pointer" onclick="scrollToFeatured()">PUMA</span>
+        <span class="hover:text-white transition-colors cursor-pointer" onclick="scrollToFeatured()">CONVERSE</span>
+        <span class="hover:text-white transition-colors cursor-pointer" onclick="scrollToFeatured()">REEBOK</span>
+        <span class="hover:text-white transition-colors cursor-pointer" onclick="scrollToFeatured()">VANS</span>
+        <span class="hover:text-white transition-colors cursor-pointer" onclick="scrollToFeatured()">NEW BALANCE</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. EXPLORE OUR COLLECTIONS (WIDER CARDS & CLEAN BOTTOM HOVER REVEAL) -->
+  <section id="collections" class="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-12 py-20">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-8">
+      
+      <!-- Left Editorial Column -->
+      <div class="lg:col-span-3 space-y-4">
+        <div class="text-xs font-mono uppercase tracking-[0.2em] text-slate-400 font-bold">CURATED FOR YOU</div>
+        <h2 class="font-heading font-semibold text-4xl sm:text-5xl lg:text-[50px] text-white uppercase leading-[0.92] tracking-tight">
+          EXPLORE OUR <br>
+          COLLECTIONS
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400 max-w-xs leading-relaxed font-normal">
+          Handpicked styles for every step of your journey.
+        </p>
+        <div class="pt-2">
+          <a href="/products.html" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#16171A] hover:bg-[#202227] text-white font-medium text-xs uppercase tracking-wider border border-white/10 transition-colors">
+            <span>VIEW ALL COLLECTIONS</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Right 4 Wider Collection Cards with Clean Bottom Hover Reveal -->
+      <div class="lg:col-span-9 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        
+        <!-- Card 1: Lifestyle -->
+        <a href="/products.html?category=casual-sneakers" class="collection-card h-[400px] block">
+          <img src="/assets/urbanstride/Image1.png" alt="Lifestyle" class="collection-img">
+          
+          <div class="collection-content-bottom">
+            <div class="flex items-end justify-between">
+              <div>
+                <h3 class="font-heading font-semibold text-2xl text-white uppercase tracking-wide">Lifestyle</h3>
+                <p class="text-xs font-mono text-slate-300">120+ Styles</p>
+              </div>
+              <div class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-xs shadow-md">
+                <i class="fa-solid fa-arrow-right"></i>
+              </div>
+            </div>
+
+            <!-- Bottom Reveal Details on Hover -->
+            <div class="collection-hover-details">
+              <p class="text-xs text-slate-300 font-normal leading-relaxed">
+                Timeless low-tops, retro chunky classics, and everyday fashion essentials.
+              </p>
+              <div class="pt-2.5">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider shadow-lg">
+                  <span>Explore</span>
+                  <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Card 2: Running -->
+        <a href="/products.html?category=running-shoes" class="collection-card h-[400px] block">
+          <img src="/assets/urbanstride/Image2.png" alt="Running" class="collection-img">
+          
+          <div class="collection-content-bottom">
+            <div class="flex items-end justify-between">
+              <div>
+                <h3 class="font-heading font-semibold text-2xl text-white uppercase tracking-wide">Running</h3>
+                <p class="text-xs font-mono text-slate-300">85+ Styles</p>
+              </div>
+              <div class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-xs shadow-md">
+                <i class="fa-solid fa-arrow-right"></i>
+              </div>
+            </div>
+
+            <div class="collection-hover-details">
+              <p class="text-xs text-slate-300 font-normal leading-relaxed">
+                High-rebound nitrogen-infused foam and carbon plates for marathon speed.
+              </p>
+              <div class="pt-2.5">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider shadow-lg">
+                  <span>Explore</span>
+                  <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Card 3: Basketball -->
+        <a href="/products.html?category=basketball" class="collection-card h-[400px] block">
+          <img src="/assets/urbanstride/Image3.png" alt="Basketball" class="collection-img">
+          
+          <div class="collection-content-bottom">
+            <div class="flex items-end justify-between">
+              <div>
+                <h3 class="font-heading font-semibold text-2xl text-white uppercase tracking-wide">Basketball</h3>
+                <p class="text-xs font-mono text-slate-300">60+ Styles</p>
+              </div>
+              <div class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-xs shadow-md">
+                <i class="fa-solid fa-arrow-right"></i>
+              </div>
+            </div>
+
+            <div class="collection-hover-details">
+              <p class="text-xs text-slate-300 font-normal leading-relaxed">
+                High-top ankle lockdown and multidirectional grip for explosive hardwood cuts.
+              </p>
+              <div class="pt-2.5">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider shadow-lg">
+                  <span>Explore</span>
+                  <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Card 4: Skateboarding -->
+        <a href="/products.html?category=skateboarding" class="collection-card h-[400px] block">
+          <img src="/assets/urbanstride/Image4.png" alt="Skateboarding" class="collection-img">
+          
+          <div class="collection-content-bottom">
+            <div class="flex items-end justify-between">
+              <div>
+                <h3 class="font-heading font-semibold text-2xl text-white uppercase tracking-wide">Skateboarding</h3>
+                <p class="text-xs font-mono text-slate-300">45+ Styles</p>
+              </div>
+              <div class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-xs shadow-md">
+                <i class="fa-solid fa-arrow-right"></i>
+              </div>
+            </div>
+
+            <div class="collection-hover-details">
+              <p class="text-xs text-slate-300 font-normal leading-relaxed">
+                Reinforced suede ollie zones and vulcanized rubber outsoles for board control.
+              </p>
+              <div class="pt-2.5">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider shadow-lg">
+                  <span>Explore</span>
+                  <i class="fa-solid fa-arrow-right text-[9px]"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. FEATURED SNEAKERS (EXACT SAME CONTAINER WIDTH & PADDING AS COLLECTIONS) -->
+  <section id="featured" class="max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-12 py-12">
+    
+    <div class="flex items-end justify-between mb-8 pb-4">
+      <div>
+        <div class="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-400 font-bold">TOP PICKS</div>
+        <h2 class="font-heading font-semibold text-4xl sm:text-5xl text-white uppercase tracking-tight">
+          FEATURED SNEAKERS
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <a href="/products.html" class="text-xs font-bold text-slate-300 hover:text-white uppercase tracking-wider flex items-center gap-1.5">
+          <span>VIEW ALL PRODUCTS</span>
+          <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- 4 Featured Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <!-- Card 1: Nike Air Force 1 '07 -->
+      <div class="card-dark rounded-2xl p-5 flex flex-col justify-between group relative">
+        <button onclick="toggleWishlist(this)" class="absolute top-4 right-4 text-slate-400 hover:text-red-400 text-sm z-10 transition-colors">
+          <i class="fa-regular fa-heart"></i>
+        </button>
+        <div onclick="openProductModal('prod_009')" class="py-6 aspect-[4/3] flex items-center justify-center cursor-pointer group-hover:scale-105 transition-transform">
+          <img src="/assets/urbanstride/Shoe1.png" alt="Air Force 1 '07" class="w-full h-full object-contain drop-shadow-xl">
+        </div>
+        <div class="space-y-1 pt-3 border-t border-white/5">
+          <div class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider">Nike</div>
+          <h3 onclick="openProductModal('prod_009')" class="font-sans font-bold text-white text-sm hover:text-blue-400 transition-colors cursor-pointer">Air Force 1 '07</h3>
+          <div class="flex items-center justify-between pt-2">
+            <span class="font-sans font-extrabold text-white text-base">₹7,999</span>
+            <button onclick="quickAddToCart('prod_009', 'Nike Air Force 1 \'07', 799900, '8', '/assets/urbanstride/Shoe1.png')" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center text-xs font-bold transition-colors">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Converse Chuck Taylor All Star -->
+      <div class="card-dark rounded-2xl p-5 flex flex-col justify-between group relative">
+        <button onclick="toggleWishlist(this)" class="absolute top-4 right-4 text-slate-400 hover:text-red-400 text-sm z-10 transition-colors">
+          <i class="fa-regular fa-heart"></i>
+        </button>
+        <div onclick="openProductModal('prod_010')" class="py-6 aspect-[4/3] flex items-center justify-center cursor-pointer group-hover:scale-105 transition-transform">
+          <img src="/assets/urbanstride/Shoe2.png" alt="Chuck Taylor All Star" class="w-full h-full object-contain drop-shadow-xl">
+        </div>
+        <div class="space-y-1 pt-3 border-t border-white/5">
+          <div class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider">Converse</div>
+          <h3 onclick="openProductModal('prod_010')" class="font-sans font-bold text-white text-sm hover:text-blue-400 transition-colors cursor-pointer">Chuck Taylor All Star</h3>
+          <div class="flex items-center justify-between pt-2">
+            <span class="font-sans font-extrabold text-white text-base">₹5,499</span>
+            <button onclick="quickAddToCart('prod_010', 'Converse Chuck Taylor All Star', 549900, '8', '/assets/urbanstride/Shoe2.png')" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center text-xs font-bold transition-colors">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: New Balance 550 White Green -->
+      <div class="card-dark rounded-2xl p-5 flex flex-col justify-between group relative">
+        <button onclick="toggleWishlist(this)" class="absolute top-4 right-4 text-slate-400 hover:text-red-400 text-sm z-10 transition-colors">
+          <i class="fa-regular fa-heart"></i>
+        </button>
+        <div onclick="openProductModal('prod_011')" class="py-6 aspect-[4/3] flex items-center justify-center cursor-pointer group-hover:scale-105 transition-transform">
+          <img src="/assets/urbanstride/Shoe3.png" alt="550 White Green" class="w-full h-full object-contain drop-shadow-xl">
+        </div>
+        <div class="space-y-1 pt-3 border-t border-white/5">
+          <div class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider">New Balance</div>
+          <h3 onclick="openProductModal('prod_011')" class="font-sans font-bold text-white text-sm hover:text-blue-400 transition-colors cursor-pointer">550 White Green</h3>
+          <div class="flex items-center justify-between pt-2">
+            <span class="font-sans font-extrabold text-white text-base">₹8,999</span>
+            <button onclick="quickAddToCart('prod_011', 'New Balance 550 White Green', 899900, '8', '/assets/urbanstride/Shoe3.png')" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center text-xs font-bold transition-colors">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Puma Suede Classic XXI -->
+      <div class="card-dark rounded-2xl p-5 flex flex-col justify-between group relative">
+        <button onclick="toggleWishlist(this)" class="absolute top-4 right-4 text-slate-400 hover:text-red-400 text-sm z-10 transition-colors">
+          <i class="fa-regular fa-heart"></i>
+        </button>
+        <div onclick="openProductModal('prod_012')" class="py-6 aspect-[4/3] flex items-center justify-center cursor-pointer group-hover:scale-105 transition-transform">
+          <img src="/assets/urbanstride/Shoe4.png" alt="Suede Classic XXI" class="w-full h-full object-contain drop-shadow-xl">
+        </div>
+        <div class="space-y-1 pt-3 border-t border-white/5">
+          <div class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-wider">Puma</div>
+          <h3 onclick="openProductModal('prod_012')" class="font-sans font-bold text-white text-sm hover:text-blue-400 transition-colors cursor-pointer">Suede Classic XXI</h3>
+          <div class="flex items-center justify-between pt-2">
+            <span class="font-sans font-extrabold text-white text-base">₹6,999</span>
+            <button onclick="quickAddToCart('prod_012', 'Puma Suede Classic XXI', 699900, '8', '/assets/urbanstride/Shoe4.png')" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center text-xs font-bold transition-colors">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 6. FULL-WIDTH SPLIT SECTION -->
+  <section id="about" class="w-full">
+    <div class="w-full grid grid-cols-1 lg:grid-cols-12 min-h-[380px]">
+      
+      <!-- Left Half: Cream Container (Why Choose Us) -->
+      <div class="lg:col-span-6 bg-[#EFECE7] text-slate-900 px-8 sm:px-12 lg:px-14 py-10 sm:py-12 flex flex-col justify-center">
+        <div class="max-w-xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-center">
+          
+          <!-- Left Part of Cream: 2-Line Headline & CTA -->
+          <div class="md:col-span-6 space-y-3.5">
+            <div class="text-[11px] font-mono font-bold uppercase tracking-[0.2em] text-slate-500">WHY CHOOSE US</div>
+            <h2 class="font-heading font-semibold text-3xl sm:text-4xl lg:text-[46px] text-black uppercase leading-[0.95] tracking-tight">
+              MORE THAN <br>
+              JUST SNEAKERS
+            </h2>
+            <p class="text-xs text-slate-700 leading-relaxed font-normal">
+              We bring you the best quality, top brands and a seamless shopping experience.
+            </p>
+            <div class="pt-1">
+              <button onclick="alert('UrbanStride Footwear — Premium authentic sneakers with Razorpay 2FA checkout.')" class="px-5 py-2.5 rounded-xl bg-black text-white font-bold text-xs uppercase tracking-wider hover:bg-slate-900 transition-colors flex items-center gap-2">
+                <span>LEARN MORE</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Part of Cream: 4 Feature Rows -->
+          <div class="md:col-span-6 space-y-3.5">
+            
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg border border-slate-400/40 flex items-center justify-center text-slate-900 text-xs flex-shrink-0">
+                <i class="fa-regular fa-circle-check text-sm"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-black">Premium Quality</div>
+                <div class="text-[10px] text-slate-500 font-normal">Top grade materials</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg border border-slate-400/40 flex items-center justify-center text-slate-900 text-xs flex-shrink-0">
+                <i class="fa-regular fa-credit-card text-sm"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-black">Secure Payments</div>
+                <div class="text-[10px] text-slate-500 font-normal">100% protected</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg border border-slate-400/40 flex items-center justify-center text-slate-900 text-xs flex-shrink-0">
+                <i class="fa-solid fa-headset text-sm"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-black">Customer Support</div>
+                <div class="text-[10px] text-slate-500 font-normal">We're here to help</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg border border-slate-400/40 flex items-center justify-center text-slate-900 text-xs flex-shrink-0">
+                <i class="fa-regular fa-gem text-sm"></i>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-black">Member Benefits</div>
+                <div class="text-[10px] text-slate-500 font-normal">Exclusive perks</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Right Half: Dark Full-Width Container with limited_offer_section_bg.png -->
+      <div class="lg:col-span-6 bg-cover bg-center text-white px-8 sm:px-12 lg:px-14 py-10 sm:py-12 flex flex-col justify-center relative" style="background-image: url('/assets/urbanstride/limited_offer_section_bg.png');">
+        
+        <div class="max-w-md space-y-3 z-10">
+          <div class="text-[11px] font-mono font-bold uppercase tracking-[0.2em] text-slate-400">LIMITED TIME OFFER</div>
+          <h2 class="font-heading font-semibold text-3xl sm:text-4xl lg:text-[46px] text-white uppercase leading-[0.95] tracking-tight">
+            GET 15% OFF <br>
+            ON YOUR FIRST ORDER
+          </h2>
+          <p class="text-xs text-slate-300 leading-relaxed max-w-sm">
+            Join our community and unlock exclusive offers.
+          </p>
+
+          <!-- Newsletter Form -->
+          <form onsubmit="handleNewsletter(event)" class="flex max-w-sm rounded-xl overflow-hidden border border-white/20 pt-1.5 bg-black/40">
+            <input type="email" required placeholder="Enter your email" class="bg-transparent text-white px-3.5 py-2.5 text-xs placeholder-slate-400 focus:outline-none flex-1">
+            <button type="submit" class="px-5 py-2.5 bg-[#EFECE7] hover:bg-white text-black font-heading font-semibold text-xs uppercase tracking-wider transition-colors">
+              SUBSCRIBE
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 7. FOOTER -->
+  <footer class="bg-[#070809] border-t border-white/10 pt-14 pb-10 text-slate-400">
+    <div class="max-w-7xl mx-auto px-6 sm:px-12 lg:px-16">
+      
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 pb-10 border-b border-white/10">
+        
+        <!-- Col 1: Brand & Logo -->
+        <div class="md:col-span-4 space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-7 flex items-center justify-center">
+              <img src="/assets/urbanstride/logo.png" alt="UrbanStride Logo" class="w-full h-full object-contain">
+            </div>
+            <div>
+              <div class="font-heading font-semibold text-xl text-white tracking-wider">UrbanStride</div>
+              <span class="text-[7px] font-bold tracking-[0.3em] text-slate-400 block uppercase font-mono">FOOTWEAR</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500 max-w-xs leading-relaxed">
+            Premium athletic footwear engineered for high performance and autonomous AI agent discovery.
+          </p>
+        </div>
+
+        <!-- Col 2: Shop -->
+        <div class="md:col-span-2 space-y-2 text-xs">
+          <div class="font-heading font-semibold text-white uppercase tracking-wider mb-2 text-sm">SHOP</div>
+          <div><a href="#featured" class="hover:text-white transition-colors">All Products</a></div>
+          <div><a href="#featured" class="hover:text-white transition-colors">New Arrivals</a></div>
+          <div><a href="#featured" class="hover:text-white transition-colors">Best Sellers</a></div>
+          <div><a href="#collections" class="hover:text-white transition-colors">Collections</a></div>
+        </div>
+
+        <!-- Col 3: Help -->
+        <div class="md:col-span-2 space-y-2 text-xs">
+          <div class="font-heading font-semibold text-white uppercase tracking-wider mb-2 text-sm">HELP</div>
+          <div><a href="#about" class="hover:text-white transition-colors">FAQs</a></div>
+          <div><a href="#about" class="hover:text-white transition-colors">Shipping & Delivery</a></div>
+          <div><a href="#about" class="hover:text-white transition-colors">Returns & Exchanges</a></div>
+          <div><a href="#about" class="hover:text-white transition-colors">Size Guide</a></div>
+        </div>
+
+        <!-- Col 4: Company -->
+        <div class="md:col-span-2 space-y-2 text-xs">
+          <div class="font-heading font-semibold text-white uppercase tracking-wider mb-2 text-sm">COMPANY</div>
+          <div><a href="#about" class="hover:text-white transition-colors">About Us</a></div>
+          <div><a href="#about" class="hover:text-white transition-colors">Careers</a></div>
+          <div><a href="#about" class="hover:text-white transition-colors">Store Locator</a></div>
+          <div><a href="#about" class="hover:text-white transition-colors">Contact Us</a></div>
+        </div>
+
+        <!-- Col 5: Follow Us -->
+        <div class="md:col-span-2 space-y-2.5">
+          <div class="font-heading font-semibold text-white uppercase tracking-wider text-sm">FOLLOW US</div>
+          <div class="flex items-center gap-3.5 text-slate-400 text-sm pt-1">
+            <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-youtube"></i></a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-slate-500">
+        <div>© 2026 UrbanStride Footwear. All rights reserved.</div>
+        <div class="flex items-center gap-4">
+          <span>Official Store</span>
+          <span>•</span>
+          <span>Razorpay Verified</span>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- 8. CART DRAWER (FIXED: hidden when closed so it doesn't block page interactions) -->
+  <div id="cart-drawer" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="toggleCart()"></div>
+    
+    <div class="absolute inset-y-0 right-0 max-w-md w-full bg-[#111316] border-l border-white/10 shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 z-10">
+      
+      <!-- Cart Header -->
+      <div class="px-6 py-5 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-bag-shopping text-blue-500"></i>
+          <h2 class="font-sans font-bold text-lg text-white">Your Shopping Bag</h2>
+        </div>
+        <button onclick="toggleCart()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Cart Items -->
+      <div id="cart-items" class="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Cart Footer -->
+      <div class="p-6 bg-[#070809] border-t border-white/10 space-y-4">
+        <div class="space-y-1 text-xs font-mono">
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Subtotal</span>
+            <span id="cart-subtotal" class="text-white font-bold">₹13,498.00</span>
+          </div>
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Shipping</span>
+            <span class="text-emerald-400 font-bold">FREE</span>
+          </div>
+          <div class="flex items-center justify-between text-base font-sans font-bold text-white pt-2 border-t border-white/10">
+            <span>TOTAL</span>
+            <span id="cart-total" class="text-blue-400 font-mono">₹13,498.00</span>
+          </div>
+        </div>
+
+        <button id="checkout-btn" onclick="executeRazorpayCheckout()" class="w-full py-3.5 rounded-xl bg-white hover:bg-slate-200 text-black font-sans font-bold text-xs uppercase tracking-wider shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer">
+          <i class="fa-solid fa-lock text-xs"></i>
+          <span>Pay with Razorpay</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 9. PRODUCT QUICK VIEW MODAL (FIXED: hidden when closed) -->
+  <div id="product-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeProductModal()"></div>
+    <div id="product-modal-content" class="relative max-w-2xl w-full bg-[#131417] rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto z-10">
+      <!-- Rendered dynamically -->
+    </div>
+  </div>
+
+  <!-- 10. JAVASCRIPT LOGIC & RAZORPAY INTEGRATION -->
+  <script>
+    // 1. Lenis Smooth Scrolling
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      smoothWheel: true,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    // 2. Parallax on hero shoe
+    const heroShoe = document.getElementById('hero-shoe');
+    if (heroShoe) {
+      window.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 18;
+        const y = (e.clientY / window.innerHeight - 0.5) * 18;
+        heroShoe.style.transform = `translate(${x}px, ${y}px)`;
+      });
+    }
+
+    // 3. Cart State
+    let cart = [
+      {
+        id: 'prod_009',
+        name: "Nike Air Force 1 '07",
+        price_paise: 799900,
+        size: '8',
+        image: '/assets/urbanstride/Shoe1.png',
+        quantity: 1,
+      },
+      {
+        id: 'prod_010',
+        name: "Converse Chuck Taylor All Star",
+        price_paise: 549900,
+        size: '8',
+        image: '/assets/urbanstride/Shoe2.png',
+        quantity: 1,
+      }
+    ];
+
+    function updateCartUI() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      document.getElementById('nav-cart-badge').textContent = totalItems;
+
+      const totalPaise = cart.reduce((sum, item) => sum + (item.price_paise * item.quantity), 0);
+      const totalInr = `₹${(totalPaise / 100).toLocaleString('en-IN')}`;
+
+      document.getElementById('cart-subtotal').textContent = totalInr;
+      document.getElementById('cart-total').textContent = totalInr;
+
+      const container = document.getElementById('cart-items');
+      if (cart.length === 0) {
+        container.innerHTML = `
+          <div class="py-20 text-center text-slate-500 space-y-2">
+            <i class="fa-solid fa-cart-arrow-down text-3xl text-slate-600"></i>
+            <p class="text-xs font-mono">Your shopping bag is empty.</p>
+          </div>
+        `;
+        document.getElementById('checkout-btn').disabled = true;
+        return;
+      }
+
+      document.getElementById('checkout-btn').disabled = false;
+      container.innerHTML = cart.map((item, idx) => `
+        <div class="p-3.5 rounded-2xl bg-[#181A1F] border border-white/10 flex items-center justify-between gap-3">
+          <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-contain bg-black/40 rounded-xl p-1">
+          <div class="flex-1 space-y-0.5">
+            <div class="font-sans font-bold text-white text-xs line-clamp-1">${item.name}</div>
+            <div class="text-[10px] font-mono text-slate-400">Size: ${item.size} • ₹${(item.price_paise / 100).toLocaleString('en-IN')}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex items-center rounded-lg bg-black border border-white/10 text-xs font-mono">
+              <button onclick="changeQty(${idx}, -1)" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white">-</button>
+              <span class="px-1 text-white font-bold">${item.quantity}</span>
+              <button onclick="changeQty(${idx}, 1)" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white">+</button>
+            </div>
+            <button onclick="removeCartItem(${idx})" class="text-slate-500 hover:text-red-400 text-xs px-1">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function changeQty(idx, delta) {
+      cart[idx].quantity += delta;
+      if (cart[idx].quantity <= 0) cart.splice(idx, 1);
+      updateCartUI();
+    }
+
+    function removeCartItem(idx) {
+      cart.splice(idx, 1);
+      updateCartUI();
+    }
+
+    function quickAddToCart(id, name, pricePaise, size, image) {
+      const existing = cart.find(item => item.id === id && item.size === size);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({
+          id,
+          name,
+          price_paise: pricePaise,
+          size,
+          image: image || '/assets/urbanstride/Shoe1.png',
+          quantity: 1,
+        });
+      }
+
+      updateCartUI();
+      openCart();
+    }
+
+    function toggleCart() {
+      const drawer = document.getElementById('cart-drawer');
+      if (drawer.classList.contains('hidden')) {
+        openCart();
+      } else {
+        closeCart();
+      }
+    }
+
+    function openCart() {
+      const drawer = document.getElementById('cart-drawer');
+      drawer.classList.remove('hidden');
+      setTimeout(() => {
+        drawer.classList.remove('opacity-0');
+        drawer.querySelector('.transform').classList.remove('translate-x-full');
+      }, 10);
+    }
+
+    function closeCart() {
+      const drawer = document.getElementById('cart-drawer');
+      drawer.classList.add('opacity-0');
+      drawer.querySelector('.transform').classList.add('translate-x-full');
+      setTimeout(() => {
+        drawer.classList.add('hidden');
+      }, 300);
+    }
+
+    function toggleWishlist(btn) {
+      const icon = btn.querySelector('i');
+      if (icon.classList.contains('fa-regular')) {
+        icon.classList.remove('fa-regular');
+        icon.classList.add('fa-solid', 'text-red-500');
+      } else {
+        icon.classList.remove('fa-solid', 'text-red-500');
+        icon.classList.add('fa-regular');
+      }
+    }
+
+    function scrollToFeatured() {
+      document.getElementById('featured').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function openProductModal(productId) {
+      const PRODUCTS_MAP = {
+        'prod_009': {
+          name: "Nike Air Force 1 '07",
+          brand: 'Nike',
+          price_paise: 799900,
+          description: 'The iconic all-white leather sneaker. Timeless silhouette with Air-Sole unit for everyday cushioning. A wardrobe essential.',
+          image: '/assets/urbanstride/Shoe1.png',
+        },
+        'prod_010': {
+          name: 'Converse Chuck Taylor All Star',
+          brand: 'Converse',
+          price_paise: 549900,
+          description: 'Classic shell-toe high-top sneaker with timeless canvas upper. Street style icon since 1969.',
+          image: '/assets/urbanstride/Shoe2.png',
+        },
+        'prod_011': {
+          name: 'New Balance 550 White Green',
+          brand: 'New Balance',
+          price_paise: 899900,
+          description: 'Retro 80s basketball sneaker silhouette in premium full-grain leather with forest green accents.',
+          image: '/assets/urbanstride/Shoe3.png',
+        },
+        'prod_012': {
+          name: 'Puma Suede Classic XXI',
+          brand: 'Puma',
+          price_paise: 699900,
+          description: 'Cult classic low-top sneaker in smooth velvet suede with contrast formstrip and softfoam insole.',
+          image: '/assets/urbanstride/Shoe4.png',
+        },
+      };
+
+      const product = PRODUCTS_MAP[productId] || PRODUCTS_MAP['prod_009'];
+      const priceInr = (product.price_paise / 100).toLocaleString('en-IN');
+
+      const content = document.getElementById('product-modal-content');
+      content.innerHTML = `
+        <button onclick="closeProductModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
+          <div class="md:col-span-6 rounded-2xl bg-[#0A0B0D] p-6 flex items-center justify-center border border-white/10">
+            <img src="${product.image}" alt="${product.name}" class="w-full h-auto object-contain drop-shadow-2xl">
+          </div>
+
+          <div class="md:col-span-6 space-y-4">
+            <div>
+              <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">${product.brand}</span>
+              <h2 class="font-sans font-bold text-2xl text-white mt-1">${product.name}</h2>
+              <div class="text-xl font-sans font-extrabold text-white mt-1">₹${priceInr}</div>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed">${product.description}</p>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-mono text-slate-400 font-bold uppercase">Select Size:</label>
+              <div class="flex gap-2 flex-wrap">
+                <button class="bg-white text-black font-bold px-3 py-1.5 rounded-lg text-xs font-mono">7</button>
+                <button class="bg-white/5 text-slate-300 hover:bg-white hover:text-black px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono">8</button>
+                <button class="bg-white/5 text-slate-300 hover:bg-white hover:text-black px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono">9</button>
+                <button class="bg-white/5 text-slate-300 hover:bg-white hover:text-black px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono">10</button>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <button onclick="quickAddToCart('${productId}', '${product.name.replace(/'/g, "\\'")}', ${product.price_paise}, '8', '${product.image}'); closeProductModal();" class="w-full py-3 rounded-xl bg-white hover:bg-slate-200 text-black font-sans font-bold text-xs uppercase tracking-wider transition-all cursor-pointer">
+                Add to Shopping Bag
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const modal = document.getElementById('product-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        document.getElementById('product-modal-content').classList.remove('scale-95');
+      }, 10);
+    }
+
+    function closeProductModal() {
+      const modal = document.getElementById('product-modal');
+      modal.classList.add('opacity-0');
+      document.getElementById('product-modal-content').classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    async function executeRazorpayCheckout() {
+      if (cart.length === 0) return;
+
+      const btn = document.getElementById('checkout-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Initializing...';
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: cart[0].id,
+            quantity: cart[0].quantity,
+            size: cart[0].size,
+            session_id: 'storefront_' + Math.random().toString(36).slice(2, 8),
+            human_instruction: 'UrbanStride Checkout',
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.razorpay_order_id) {
+          alert('Order generation failed: ' + (data.error || 'Stock error'));
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-lock text-xs"></i> Pay with Razorpay';
+          return;
+        }
+
+        const options = {
+          key: 'rzp_test_TSjdfOWmYoGtxa',
+          name: 'UrbanStride Footwear',
+          description: `Order ${data.razorpay_order_id}`,
+          order_id: data.razorpay_order_id,
+          handler: async function (response) {
+            try {
+              const vRes = await fetch('/api/payments/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(response),
+              });
+              const vData = await vRes.json();
+              if (vData.success) {
+                cart = [];
+                updateCartUI();
+                closeCart();
+                alert(`🎉 Payment Verified & Captured!\nPayment ID: ${response.razorpay_payment_id}`);
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          },
+          prefill: {
+            name: 'UrbanStride Customer',
+            email: 'customer@urbanstride.io',
+            contact: '9999999999',
+          },
+          theme: {
+            color: '#3B82F6',
+          },
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        alert('Checkout error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-lock text-xs"></i> Pay with Razorpay';
+      }
+    }
+
+    function handleNewsletter(e) {
+      e.preventDefault();
+      alert('🎉 Subscribed! Use code STRIDE15 for 15% off.');
+      e.target.reset();
+    }
+
+    document.addEventListener('DOMContentLoaded', updateCartUI);
+  </script>
+
+  <!-- Google Auth Module -->
+  <script src="/assets/google-auth.js"></script>
+</body>
+</html>

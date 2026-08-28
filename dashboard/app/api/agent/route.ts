@@ -4,7 +4,7 @@ import path from 'path';
 
 export async function POST(req: Request) {
   try {
-    const { instruction } = await req.json();
+    const { instruction, sessionId } = await req.json();
     
     if (!instruction || typeof instruction !== 'string') {
       return NextResponse.json({ error: 'Instruction string is required' }, { status: 400 });
@@ -14,12 +14,18 @@ export async function POST(req: Request) {
     const agentCwd = path.join(/* turbopackIgnore: true */ rootDir, 'buyer-agent');
     const agentScript = path.join(/* turbopackIgnore: true */ agentCwd, 'src', 'index.js');
 
-    console.log(`[Dashboard API] Spawning Agent for instruction: "${instruction}"`);
+    console.log(`[Dashboard API] Spawning Agent for session ${sessionId || 'new'}: "${instruction}"`);
 
     const safeInstruction = instruction.replace(/"/g, '\\"');
     const cmd = `node "${agentScript}" "${safeInstruction}"`;
 
-    exec(cmd, { cwd: agentCwd, env: process.env }, (error) => {
+    exec(cmd, {
+      cwd: agentCwd,
+      env: {
+        ...process.env,
+        AGENT_SESSION_ID: sessionId || undefined,
+      },
+    }, (error) => {
       if (error) {
         console.error('[Dashboard API] Agent process error:', error);
       }

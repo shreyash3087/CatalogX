@@ -35,10 +35,15 @@ const MERCHANTS = [
   'http://localhost:3002'  // TechCart (Electronics)
 ];
 const MAX_RETRIES = parseInt(process.env.MAX_RETRIES) || 3;
+// Global persistent session response ID cache for conversational thread continuity
+if (!global._CATALOGX_SESSION_MEMORY) {
+  global._CATALOGX_SESSION_MEMORY = new Map();
+}
+const _SESSION_RESPONSE_MAP = global._CATALOGX_SESSION_MEMORY;
 
 class BuyerAgent {
-  constructor() {
-    this.sessionId = `sess_${uuidv4().slice(0, 12)}`;
+  constructor(customSessionId = null) {
+    this.sessionId = customSessionId || process.env.AGENT_SESSION_ID || `sess_${uuidv4().slice(0, 12)}`;
     this.agentId = `agent_catalogx_buyer`;
     this.audit = new AuditLogger(this.sessionId, this.agentId);
     this.excludedProductIds = [];
@@ -60,9 +65,45 @@ class BuyerAgent {
     let alternativesConsidered = [];
 
     try {
-      // ── STEP 1: Parse instruction ──────────────────────────────────────
+      // ── STEP 1: Understand Intent & Constraints with Responses API Session Memory ──
       console.log(chalk.bold('\n  Phase 1: Understanding your request...'));
-      constraints = await parseInstruction(instruction);
+      const prevResponseId = _SESSION_RESPONSE_MAP.get(this.sessionId) || null;
+      constraints = await parseInstruction(instruction, { previous_response_id: prevResponseId });
+
+      if (constraints.response_id) {
+        _SESSION_RESPONSE_MAP.set(this.sessionId, constraints.response_id);
+      }
+
+      // Handle conversational / greeting / out-of-context messages naturally without searching products
+      if (constraints.intent === 'conversational') {
+        await this.audit.log(
+          'CONVERSATIONAL_REPLIED',
+          { instruction },
+          { reply: constraints.conversational_reply },
+          constraints.reasoning || 'Conversational interaction addressed with context guidance.'
+        );
+        console.log(chalk.green(`  💬 Reply: ${constraints.conversational_reply}`));
+        return {
+          status: 'conversational',
+          reply: constraints.conversational_reply,
+        };
+      }
+
+      // If essential detail like shoe size is missing, ask the user concisely before buying
+      if (constraints.needs_clarification && constraints.clarification_question) {
+        await this.audit.log(
+          'CLARIFICATION_REQUESTED',
+          { instruction, missing: 'size' },
+          { reply: constraints.clarification_question },
+          constraints.reasoning || 'Requested essential sizing details before placing order.'
+        );
+        console.log(chalk.yellow(`  ❓ Clarification Needed: ${constraints.clarification_question}`));
+        return {
+          status: 'clarification_needed',
+          reply: constraints.clarification_question,
+        };
+      }
+
       await this.audit.log('INSTRUCTION_PARSED', { instruction }, constraints, constraints.reasoning);
       console.log(chalk.gray(`  Budget: ${constraints.budget_max_paise ? '₹' + (constraints.budget_max_paise/100) : 'not specified'} | Size: ${constraints.required_size || 'any'} | Category: ${constraints.category || 'any'}`));
 
@@ -99,12 +140,26 @@ class BuyerAgent {
       selectedProduct = await this.selectBestProduct(searchResults, constraints);
 
       if (!selectedProduct) {
-        return this.reportFailure(instruction, constraints, 'Could not select a suitable product.', alternativesConsidered);
+        await this.audit.log('SEARCH_NO_RESULTS',
+          { query: constraints.query || instruction },
+          null,
+          `No matching products found for "${instruction}" in the merchant catalog.`
+        );
+        return this.reportFailure(instruction, constraints, `No matching products found for "${instruction}" in the merchant catalog.`, alternativesConsidered);
       }
 
       await this.audit.log('PRODUCT_SELECTED',
         { candidates: searchResults.map(p => p.id) },
-        { selected_id: selectedProduct.id, selected_name: selectedProduct.name },
+        { 
+          selected_id: selectedProduct.id, 
+          selected_name: selectedProduct.name,
+          brand: selectedProduct.brand,
+          price: selectedProduct.price,
+          image_url: selectedProduct.image_url,
+          category: selectedProduct.category,
+          merchant_url: this.merchantUrl,
+          product_url: selectedProduct.product_url || `${this.merchantUrl}/product.html?id=${selectedProduct.id}`,
+        },
         selectedProduct._selectionReasoning || `Selected "${selectedProduct.name}" as best match for the requirements`
       );
       console.log(chalk.green(`  ✅ Selected: ${selectedProduct.name} — ${selectedProduct.price.display}`));
@@ -169,13 +224,105 @@ class BuyerAgent {
 
       await this.audit.log('ORDER_CREATED',
         { product_id: selectedProduct.id, size: constraints.required_size },
-        { razorpay_order_id: orderResult.razorpay_order_id, amount: orderResult.amount },
-        `Razorpay order created: ${orderResult.razorpay_order_id} for ₹${orderResult.amount.inr}`
+        { 
+          razorpay_order_id: orderResult.razorpay_order_id, 
+          amount: orderResult.amount,
+          amount_inr: orderResult.amount.inr,
+          product_name: selectedProduct.name,
+          brand: selectedProduct.brand,
+          image_url: selectedProduct.image_url,
+          merchant_url: this.merchantUrl,
+          product_id: selectedProduct.id,
+          product_url: selectedProduct.product_url || `${this.merchantUrl}/product.html?id=${selectedProduct.id}`,
+          gate_tier: gateTier,
+          agentic_upsell: orderResult.agentic_upsell,
+        },
+        `Razorpay order created: ${orderResult.razorpay_order_id} for ₹${orderResult.amount.inr} [${gateTier}]`
       );
       console.log(chalk.green(`  ✅ Order: ${orderResult.razorpay_order_id} | Amount: ${orderResult.amount.display}`));
 
-      // ── STEP 8: Execute payment ───────────────────────────────────────
-      console.log(chalk.bold('\n  Phase 8: Processing payment...'));
+      // ── STEP 7b: Dynamic AI Upsell / Cross-Sell Evaluation (Track 01 Growth) ──
+      if (orderResult.agentic_upsell) {
+        const upsell = orderResult.agentic_upsell;
+        const potentialTotal = orderResult.amount.paise + upsell.bundle_price_paise;
+        const budgetCeiling = constraints.budget_max_paise || (gateTier === 'AUTO' ? 150000 : 5000000);
+        
+        if (potentialTotal <= budgetCeiling) {
+          await this.audit.log('UPSELL_OFFERED',
+            { base_product: selectedProduct.name, upsell_item: upsell.name, bundle_price: `₹${upsell.bundle_price_paise/100}` },
+            { original_price: `₹${upsell.original_price_paise/100}`, discount: upsell.discount },
+            `Merchant Agent proposed bundle: ${upsell.name} (${upsell.discount}) for +₹${upsell.bundle_price_paise/100}. Fits within user budget.`
+          );
+          console.log(chalk.cyan(`  💡 Merchant Upsell Opportunity: ${upsell.name} (+₹${upsell.bundle_price_paise/100}) [${upsell.discount}]`));
+        }
+      }
+
+      // ── STEP 8: Payment Execution Policy ──
+      // In Dashboard / Conversational Mode:
+      // Present the selected item and order in chat so the user can review and click "1-Click Buy via Mandate" (Tier 1) or "Pay with Razorpay 2FA" (Tier 2/3)
+      if (process.env.AGENT_SESSION_ID) {
+        console.log(chalk.bold.cyan(`\n  💳 Order created on Razorpay [Tier: ${gateTier}]. Awaiting user checkout in dashboard...\n`));
+        return {
+          status: 'order_created',
+          orderResult,
+          selectedProduct,
+          gateTier,
+          sessionId: this.sessionId,
+        };
+      }
+
+      // Standalone Headless CLI Mode:
+      // In Tier 1 (AUTO mandate), execute payment automatically without requiring a human button click!
+      if (gateTier === 'AUTO') {
+        console.log(chalk.bold.green('\n  🟢 Tier 1 Pre-Authorized Mandate active: Executing autonomous payment...\n'));
+
+        await this.audit.log('MANDATE_APPLIED',
+          { order_id: orderResult.razorpay_order_id, amount: orderResult.amount },
+          { mandate_status: 'ACTIVE_PRE_AUTHORIZED', max_limit: '₹1,500' },
+          `Pre-authorized autonomous mandate applied for ₹${orderResult.amount.inr}. Executing zero-click payment.`
+        );
+
+        await this.audit.log('PAYMENT_INITIATED',
+          { razorpay_order_id: orderResult.razorpay_order_id, method: 'pre_authorized_mandate' },
+          null,
+          `Initiating autonomous payment execution for order ${orderResult.razorpay_order_id}`
+        );
+
+        paymentResult = await this.executePaymentWithRetry(orderResult.razorpay_order_id);
+
+        if (!paymentResult || !paymentResult.success) {
+          return this.reportFailure(instruction, constraints, 'Autonomous mandate payment failed.', alternativesConsidered, orderResult);
+        }
+
+        await this.audit.log('PAYMENT_VERIFIED',
+          { razorpay_order_id: orderResult.razorpay_order_id },
+          { razorpay_payment_id: paymentResult.razorpay_payment_id, amount_inr: orderResult.amount.inr, autonomous: true },
+          `Autonomous payment captured & verified! Transaction ID: ${paymentResult.razorpay_payment_id}`
+        );
+        console.log(chalk.green(`  ✅ Autonomous Payment Captured: ${paymentResult.razorpay_payment_id}`));
+
+        return {
+          status: 'completed',
+          orderResult,
+          paymentResult,
+          selectedProduct,
+          sessionId: this.sessionId,
+          autonomous: true,
+        };
+      }
+
+      // Tier 2 (REVIEW) and Tier 3 (HIGH_VALUE_2FA): Await user checkout
+      console.log(chalk.bold.cyan(`\n  💳 Tier [${gateTier}] requires human authorization.\n`));
+      return {
+        status: 'order_created',
+        orderResult,
+        selectedProduct,
+        gateTier,
+        sessionId: this.sessionId,
+      };
+
+      // ── STEP 8: Execute payment (Headless CLI Simulation Mode) ─────────
+      console.log(chalk.bold('\n  Phase 8: Processing payment simulation...'));
       await this.audit.log('PAYMENT_INITIATED',
         { razorpay_order_id: orderResult.razorpay_order_id },
         null,
@@ -190,7 +337,7 @@ class BuyerAgent {
 
       await this.audit.log('PAYMENT_VERIFIED',
         { razorpay_order_id: orderResult.razorpay_order_id },
-        { razorpay_payment_id: paymentResult.razorpay_payment_id },
+        { razorpay_payment_id: paymentResult.razorpay_payment_id, amount_inr: orderResult.amount.inr },
         `Payment verified successfully. Payment ID: ${paymentResult.razorpay_payment_id}`
       );
       console.log(chalk.green(`  ✅ Payment: ${paymentResult.razorpay_payment_id}`));
@@ -236,15 +383,32 @@ class BuyerAgent {
       throw new Error('No active merchants available in federation.');
     }
 
-    // Category routing logic: match query category against merchant manifest categories
-    const category = constraints.category || '';
+    // Category & Keyword routing logic: match query category against merchant manifest categories
+    const category = (constraints.category || '').toLowerCase();
+    const query = (constraints.query || constraints.instruction || '').toLowerCase();
     let selected = manifests[0]; // fallback default to first reachable
 
     for (const item of manifests) {
-      const match = item.manifest.catalog.categories.some(
+      // 1. Direct category ID match
+      const catMatch = category && item.manifest.catalog.categories.some(
         c => c.id === category || category.includes(c.id) || c.id.includes(category)
       );
-      if (match) {
+      if (catMatch) {
+        selected = item;
+        break;
+      }
+
+      // 2. Keyword match in category name or ID
+      const keywordMatch = item.manifest.catalog.categories.some(
+        c => query.includes(c.id.toLowerCase()) || (c.name && query.includes(c.name.toLowerCase()))
+      );
+      if (keywordMatch) {
+        selected = item;
+        break;
+      }
+
+      // 3. Electronics vs Footwear heuristic
+      if (item.manifest.merchant.category === 'electronics' && (query.includes('earbud') || query.includes('headphone') || query.includes('watch') || query.includes('keyboard') || query.includes('audio') || query.includes('anc'))) {
         selected = item;
         break;
       }
@@ -260,7 +424,7 @@ class BuyerAgent {
     const resp = await axios.post(`${this.activeMerchantUrl}/api/products/search`, {
       query: constraints.query || constraints.instruction,
       filters,
-      limit: 10,
+      limit: 25,
     }, { timeout: 15000 });
 
     let results = resp.data.results || [];
@@ -275,11 +439,10 @@ class BuyerAgent {
 
   async selectBestProduct(products, constraints) {
     if (products.length === 0) return null;
-    if (products.length === 1) return products[0];
 
-    // Use LLM to rank and explain the selection
+    // Use LLM to check relevance, quality, and budget-tier alignment
     try {
-      const productList = products.slice(0, 5).map((p, i) => ({
+      const productList = products.slice(0, 15).map((p, i) => ({
         index: i,
         id: p.id,
         name: p.name,
@@ -295,12 +458,26 @@ class BuyerAgent {
       const selection = await chatJSON([
         {
           role: 'system',
-          content: `You are a smart shopping assistant. Given a user's requirements and a list of products, 
-select the BEST product and explain why. Return JSON:
+          content: `You are an expert, consultative personal shopper and e-commerce buyer assistant.
+Given a user's instruction and candidate products from the catalog, evaluate all options and select the absolute best matching product.
+
+CRITICAL SELECTION & BUDGET-TIER ALIGNMENT RULES:
+1. BUDGET TIER & INTENT ALIGNMENT:
+   - When the user specifies a high or generous budget (e.g. ₹10,000 to ₹30,000+), do NOT select a cheap low-end entry product unless they specifically asked for "cheap" or "affordable"! Prioritize flagship, high-durability, premium materials, and top-tier models (e.g. Salomon X Ultra 4 GTX, Nike Air Force 1, Adidas Superstar, Sony Flagship ANC) that best utilize the budget for quality, pedigree, and longevity.
+   - When the user specifies a low or tight budget (e.g. under ₹1,500 or under ₹3,000), prioritize high-value options within that cap (e.g. HRX RUN, Campus Hurricane, Nike Revolution, Skechers GO RUN).
+   - If the user specifies a specific brand or feature (e.g. "Nike", "waterproof", "noise cancelling"), honor that as the primary requirement.
+2. ACCURACY:
+   - If the user is asking for an item type that is NOT present among the candidates (e.g. "laptop" when only shoes or mouse are shown), return:
+     { "matches_found": false, "reasoning": "None of the products match the requested item type." }
+3. CONSULTATIVE EXPLAINABLE REASONING:
+   - Provide a 2-3 sentence explanation detailing WHY this specific model was chosen (mentioning brand reputation, materials, cushioning, or price-to-performance value within their budget), and briefly state why it beats alternative candidates.
+
+Return JSON format:
 {
-  "selected_index": number,  // 0-based index of the best product
-  "reasoning": string,       // 2-3 sentence explanation of why this is the best choice
-  "rejected_reasons": { [index]: string }  // why other products were not selected
+  "matches_found": true,
+  "selected_index": number,  // 0-based index of the best matching product from the Candidates list
+  "reasoning": string,       // 2-3 sentence explainable rationale
+  "rejected_reasons": { [index]: string }
 }`,
         },
         {
@@ -310,16 +487,26 @@ Budget: ${constraints.budget_max_paise ? '₹' + constraints.budget_max_paise/10
 Required size: ${constraints.required_size || 'any'}
 Preferred: ${JSON.stringify(constraints.other_preferences)}
 
-Products:
+Candidates:
 ${JSON.stringify(productList, null, 2)}`,
         },
       ]);
 
-      const best = products[selection.selected_index] || products[0];
+      if (selection.matches_found === false) {
+        console.log(chalk.yellow(`  ⚠️ No relevant product match: ${selection.reasoning}`));
+        return null;
+      }
+
+      if (selection.selected_index === undefined || selection.selected_index === null || selection.selected_index < 0 || selection.selected_index >= products.length) {
+        return null;
+      }
+
+      const best = products[selection.selected_index];
+      if (!best) return null;
       best._selectionReasoning = selection.reasoning;
       return best;
     } catch (e) {
-      // Fallback: return highest relevance score
+      console.error('selectBestProduct error:', e);
       return products[0];
     }
   }
@@ -330,11 +517,34 @@ ${JSON.stringify(productList, null, 2)}`,
   }
 
   async createOrder(product, constraints) {
+    let userProfile = null;
+    try {
+      if (process.env.CATALOGX_USER_PROFILE) {
+        userProfile = JSON.parse(process.env.CATALOGX_USER_PROFILE);
+      }
+    } catch (e) {}
+
+    const customer = {
+      name: userProfile?.name || 'Shreyas',
+      email: userProfile?.email || 'shreyas@agentic.ai',
+      phone: userProfile?.phone || '+91 98765 43210',
+    };
+
+    const shipping_address = userProfile?.delivery_address || {
+      street: 'Flat 402, Skyline Residency, 100ft Road, Indiranagar',
+      city: 'Bengaluru',
+      state: 'Karnataka',
+      postal_code: '560038',
+      country: 'India',
+    };
+
     const resp = await axios.post(`${this.activeMerchantUrl}/api/orders`, {
       product_id: product.id,
-      size: constraints.required_size || product.sizes[0],
-      color: constraints.preferred_color || product.colors[0],
+      size: constraints.required_size || (product.sizes && product.sizes[0]) || null,
+      color: constraints.preferred_color || (product.colors && product.colors[0]) || null,
       quantity: 1,
+      customer,
+      shipping_address,
       buyer_agent_id: this.agentId,
       session_id: this.sessionId,
       human_instruction: constraints.instruction,

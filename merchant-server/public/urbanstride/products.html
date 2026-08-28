@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UrbanStride Footwear</title>
+  <meta name="description" content="Explore the full UrbanStride sneaker catalog. Curated luxury footwear with seamless Razorpay checkout.">
+
+  <!-- Refined Typography: Barlow Condensed (Headlines) & Plus Jakarta Sans (UI/Body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/assets/store-notifications.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            heading: ['"Barlow Condensed"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              dark: '#0A0B0D',
+              card: '#121418',
+              cardHover: '#181B22',
+              accent: '#3B82F6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0A0B0D;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #24272E;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3B82F6;
+    }
+
+    /* Glass Navbar */
+    .nav-glass-pure {
+      background: rgba(10, 11, 13, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Premium Product Card */
+    .sneaker-card {
+      background: #121418;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 1.25rem;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sneaker-card:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-6px);
+      box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.85);
+    }
+    .sneaker-card:hover .sneaker-img {
+      transform: scale(1.08) rotate(-2deg);
+    }
+    .sneaker-img {
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Category Pill Active */
+    .filter-chip.active {
+      background: #FFFFFF;
+      color: #000000;
+      font-weight: 700;
+      border-color: #FFFFFF;
+    }
+  </style>
+</head>
+
+<body class="bg-[#0A0B0D] text-slate-100 font-sans antialiased overflow-x-hidden selection:bg-white selection:text-black">
+
+  <!-- 1. LUXURY NAVIGATION BAR -->
+  <header class="fixed top-0 left-0 right-0 z-50 nav-glass-pure">
+    <div class="max-w-[1440px] mx-auto px-6 sm:px-10 h-20 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <a href="/" class="flex items-center gap-3.5 group">
+        <div class="w-11 h-9 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+          <img src="/assets/urbanstride/logo.png" alt="UrbanStride Logo" class="w-full h-full object-contain drop-shadow-[0_4px_10px_rgba(255,255,255,0.2)]">
+        </div>
+        <div>
+          <div class="font-heading font-semibold text-2xl text-white tracking-wider leading-none">
+            UrbanStride
+          </div>
+          <span class="text-[8px] font-bold tracking-[0.3em] text-slate-400 block mt-0.5 uppercase font-mono">CATALOG</span>
+        </div>
+      </a>
+
+      <!-- Center Navigation Links -->
+      <nav class="hidden md:flex items-center gap-8 font-medium text-xs sm:text-sm text-slate-300">
+        <a href="/" class="hover:text-white transition-colors">Home</a>
+        <a href="/products.html" class="text-white font-bold border-b border-white pb-0.5">All Sneakers</a>
+        <a href="/products.html?category=casual-sneakers" class="hover:text-white transition-colors">Lifestyle</a>
+        <a href="/products.html?category=running-shoes" class="hover:text-white transition-colors">Running</a>
+        <a href="/products.html?category=basketball" class="hover:text-white transition-colors">Basketball</a>
+        <a href="/products.html?category=skateboarding" class="hover:text-white transition-colors">Skateboarding</a>
+      </nav>
+
+      <!-- Right Tools: Search Bar & Cart Drawer Trigger -->
+      <div class="flex items-center gap-4">
+        
+        <!-- Search Input Box -->
+        <div class="relative hidden sm:block w-48 lg:w-64">
+          <input id="search-input" oninput="applyFilters()" type="text" placeholder="Search sneakers..." class="w-full bg-white/5 border border-white/10 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-sans">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        </div>
+
+        <!-- Cart Bag -->
+        <button onclick="toggleCart()" class="relative p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all cursor-pointer">
+          <i class="fa-solid fa-bag-shopping text-sm"></i>
+          <span id="nav-cart-badge" class="absolute -top-1 -right-1 bg-white text-black font-mono text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow">2</span>
+        </button>
+
+        <!-- Google Auth Mount -->
+        <div class="store-google-auth-mount"></div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- 2. EDITORIAL HERO / HEADER -->
+  <section class="pt-32 pb-10 max-w-[1440px] mx-auto px-6 sm:px-10">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-8">
+      
+      <div class="space-y-2">
+        <div class="text-xs font-mono uppercase tracking-[0.25em] text-slate-400 font-bold">
+          ARCHIVE // 2026 COLLECTION
+        </div>
+        <h1 class="font-heading font-semibold text-5xl sm:text-6xl text-white uppercase tracking-tight leading-none">
+          ALL SNEAKERS & FOOTWEAR
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-400 font-normal max-w-lg leading-relaxed">
+          Engineered for performance, curated for street style. Explore 23+ authentic silhouettes with instant 2FA Razorpay checkout.
+        </p>
+      </div>
+
+      <!-- Live Count & Sort Bar -->
+      <div class="flex items-center gap-4 flex-shrink-0">
+        <span id="product-count-badge" class="px-3.5 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-slate-300">
+          Loading products...
+        </span>
+
+        <!-- Sort Select -->
+        <select id="sort-select" onchange="applyFilters()" class="bg-[#121418] text-white border border-white/15 rounded-xl px-4 py-2 text-xs font-mono focus:outline-none focus:border-white/40 cursor-pointer">
+          <option value="featured">Sort: Featured</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="name-asc">Alphabetical: A-Z</option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- 3. INTERACTIVE CATEGORY & BRAND FILTER TABS -->
+    <div class="pt-6 space-y-4">
+      
+      <!-- Category Tabs -->
+      <div class="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none">
+        <button onclick="setCategoryFilter('all', this)" class="filter-chip active px-4 py-2 rounded-full border border-white/10 bg-white/5 text-xs uppercase tracking-wider transition-all whitespace-nowrap">
+          All Footwear
+        </button>
+        <button onclick="setCategoryFilter('casual-sneakers', this)" class="filter-chip px-4 py-2 rounded-full border border-white/10 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 text-xs uppercase tracking-wider transition-all whitespace-nowrap">
+          Lifestyle & Casual
+        </button>
+        <button onclick="setCategoryFilter('running-shoes', this)" class="filter-chip px-4 py-2 rounded-full border border-white/10 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 text-xs uppercase tracking-wider transition-all whitespace-nowrap">
+          Running & Performance
+        </button>
+        <button onclick="setCategoryFilter('basketball', this)" class="filter-chip px-4 py-2 rounded-full border border-white/10 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 text-xs uppercase tracking-wider transition-all whitespace-nowrap">
+          Basketball & Court
+        </button>
+        <button onclick="setCategoryFilter('skateboarding', this)" class="filter-chip px-4 py-2 rounded-full border border-white/10 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 text-xs uppercase tracking-wider transition-all whitespace-nowrap">
+          Skateboarding
+        </button>
+      </div>
+
+      <!-- Brand Filter Chips -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 text-xs font-mono">
+        <span class="text-slate-500 uppercase text-[10px] tracking-wider pr-1 font-bold">Brands:</span>
+        <button onclick="setBrandFilter('all', this)" class="brand-chip font-bold text-white bg-white/15 px-3 py-1 rounded-lg border border-white/20 transition-all">ALL</button>
+        <button onclick="setBrandFilter('Nike', this)" class="brand-chip text-slate-400 hover:text-white bg-white/5 px-3 py-1 rounded-lg border border-white/5 transition-all">NIKE</button>
+        <button onclick="setBrandFilter('Adidas', this)" class="brand-chip text-slate-400 hover:text-white bg-white/5 px-3 py-1 rounded-lg border border-white/5 transition-all">ADIDAS</button>
+        <button onclick="setBrandFilter('Puma', this)" class="brand-chip text-slate-400 hover:text-white bg-white/5 px-3 py-1 rounded-lg border border-white/5 transition-all">PUMA</button>
+        <button onclick="setBrandFilter('Converse', this)" class="brand-chip text-slate-400 hover:text-white bg-white/5 px-3 py-1 rounded-lg border border-white/5 transition-all">CONVERSE</button>
+        <button onclick="setBrandFilter('New Balance', this)" class="brand-chip text-slate-400 hover:text-white bg-white/5 px-3 py-1 rounded-lg border border-white/5 transition-all">NEW BALANCE</button>
+        <button onclick="setBrandFilter('Reebok', this)" class="brand-chip text-slate-400 hover:text-white bg-white/5 px-3 py-1 rounded-lg border border-white/5 transition-all">REEBOK</button>
+        <button onclick="setBrandFilter('Skechers', this)" class="brand-chip text-slate-400 hover:text-white bg-white/5 px-3 py-1 rounded-lg border border-white/5 transition-all">SKECHERS</button>
+        <button onclick="setBrandFilter('Vans', this)" class="brand-chip text-slate-400 hover:text-white bg-white/5 px-3 py-1 rounded-lg border border-white/5 transition-all">VANS</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. PRODUCT GRID -->
+  <section class="max-w-[1440px] mx-auto px-6 sm:px-10 pb-28">
+    
+    <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <!-- Dynamically Rendered via JavaScript -->
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-indicator" class="py-32 text-center text-slate-500 font-mono text-xs">
+      <i class="fa-solid fa-spinner animate-spin text-3xl mb-3 text-white"></i>
+      <p>Fetching store catalog...</p>
+    </div>
+
+  </section>
+
+  <!-- 5. FOOTER -->
+  <footer class="border-t border-white/10 bg-[#070809] py-12 text-slate-400 text-xs font-sans">
+    <div class="max-w-[1440px] mx-auto px-6 sm:px-10 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-7 flex items-center justify-center">
+          <img src="/assets/urbanstride/logo.png" alt="Logo" class="w-full h-full object-contain">
+        </div>
+        <span class="font-heading font-semibold text-xl text-white">UrbanStride Footwear</span>
+      </div>
+      <div class="flex items-center gap-6 font-medium">
+        <a href="/" class="hover:text-white transition-colors">Showcase Home</a>
+        <a href="/products.html" class="text-white font-bold">All Sneakers</a>
+      </div>
+      <div class="text-slate-500 font-mono text-[11px]">
+        © 2026 UrbanStride Inc. All rights reserved. Powered by Razorpay.
+      </div>
+    </div>
+  </footer>
+
+  <!-- 6. CART DRAWER -->
+  <div id="cart-drawer" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="toggleCart()"></div>
+    
+    <div class="absolute inset-y-0 right-0 max-w-md w-full bg-[#111316] border-l border-white/10 shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 z-10">
+      
+      <!-- Cart Header -->
+      <div class="px-6 py-5 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-bag-shopping text-blue-500"></i>
+          <h2 class="font-sans font-bold text-lg text-white">Your Shopping Bag</h2>
+        </div>
+        <button onclick="toggleCart()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Cart Items -->
+      <div id="cart-items" class="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Cart Footer -->
+      <div class="p-6 bg-[#070809] border-t border-white/10 space-y-4">
+        <div class="space-y-1 text-xs font-mono">
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Subtotal</span>
+            <span id="cart-subtotal" class="text-white font-bold">₹0.00</span>
+          </div>
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Express Shipping</span>
+            <span class="text-emerald-400 font-bold">FREE</span>
+          </div>
+          <div class="flex items-center justify-between text-base font-sans font-bold text-white pt-2 border-t border-white/10">
+            <span>TOTAL</span>
+            <span id="cart-total" class="text-white font-mono font-bold">₹0.00</span>
+          </div>
+        </div>
+
+        <button id="checkout-btn" onclick="executeRazorpayCheckout()" class="w-full py-3.5 rounded-xl bg-white hover:bg-slate-200 text-black font-sans font-bold text-xs uppercase tracking-wider shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer">
+          <i class="fa-solid fa-lock text-xs"></i>
+          <span>Pay with Razorpay</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 7. QUICK VIEW MODAL -->
+  <div id="product-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeProductModal()"></div>
+    <div id="product-modal-content" class="relative max-w-2xl w-full bg-[#131417] rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto z-10">
+      <!-- Rendered dynamically -->
+    </div>
+  </div>
+
+  <!-- 8. JAVASCRIPT STATE & STORE ENGINE -->
+  <script>
+    let allProducts = [];
+    let activeCategory = 'all';
+    let activeBrand = 'all';
+
+    let cart = [
+      {
+        id: 'prod_009',
+        name: "Nike Air Force 1 '07",
+        price_paise: 799900,
+        size: '8',
+        image: '/assets/urbanstride/Shoe1.png',
+        quantity: 1,
+      },
+      {
+        id: 'prod_010',
+        name: "Converse Chuck Taylor All Star",
+        price_paise: 549900,
+        size: '8',
+        image: '/assets/urbanstride/Shoe2.png',
+        quantity: 1,
+      }
+    ];
+
+    const SHOE_ASSETS = [
+      '/assets/urbanstride/Shoe1.png',
+      '/assets/urbanstride/Shoe2.png',
+      '/assets/urbanstride/Shoe3.png',
+      '/assets/urbanstride/Shoe4.png',
+    ];
+
+    // Initialize Catalog
+    async function init() {
+      try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        allProducts = data.products || [];
+
+        // Check query parameters
+        const params = new URLSearchParams(window.location.search);
+        const catParam = params.get('category');
+        if (catParam) {
+          activeCategory = catParam;
+          document.querySelectorAll('.filter-chip').forEach(btn => {
+            if (btn.getAttribute('onclick')?.includes(catParam)) {
+              btn.classList.add('active');
+            } else {
+              btn.classList.remove('active');
+            }
+          });
+        }
+
+        applyFilters();
+        updateCartUI();
+      } catch (err) {
+        console.error('Failed to load products:', err);
+      } finally {
+        document.getElementById('loading-indicator')?.classList.add('hidden');
+      }
+    }
+
+    // Helper: Extract price in Paise and Formatted String safely
+    function getProductPrice(p) {
+      if (p.price && typeof p.price.paise === 'number') {
+        return {
+          paise: p.price.paise,
+          formatted: `₹${(p.price.paise / 100).toLocaleString('en-IN')}`,
+          mrp: `₹${Math.round((p.price.paise * 1.35) / 100).toLocaleString('en-IN')}`
+        };
+      }
+      if (typeof p.price_paise === 'number') {
+        return {
+          paise: p.price_paise,
+          formatted: `₹${(p.price_paise / 100).toLocaleString('en-IN')}`,
+          mrp: `₹${Math.round((p.price_paise * 1.35) / 100).toLocaleString('en-IN')}`
+        };
+      }
+      return { paise: 799900, formatted: '₹7,999', mrp: '₹10,999' };
+    }
+
+    // Filter & Sort Logic
+    function applyFilters() {
+      const q = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
+      const sortBy = document.getElementById('sort-select')?.value || 'featured';
+
+      let filtered = allProducts.filter(p => {
+        // Category filter
+        if (activeCategory !== 'all' && p.category !== activeCategory) return false;
+
+        // Brand filter
+        if (activeBrand !== 'all' && p.brand.toLowerCase() !== activeBrand.toLowerCase()) return false;
+
+        // Search query
+        if (q) {
+          const matchName = p.name.toLowerCase().includes(q);
+          const matchBrand = p.brand.toLowerCase().includes(q);
+          const matchDesc = p.description?.toLowerCase().includes(q) || false;
+          if (!matchName && !matchBrand && !matchDesc) return false;
+        }
+
+        return true;
+      });
+
+      // Sort
+      if (sortBy === 'price-asc') {
+        filtered.sort((a, b) => getProductPrice(a).paise - getProductPrice(b).paise);
+      } else if (sortBy === 'price-desc') {
+        filtered.sort((a, b) => getProductPrice(b).paise - getProductPrice(a).paise);
+      } else if (sortBy === 'name-asc') {
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+      }
+
+      document.getElementById('product-count-badge').textContent = `Showing ${filtered.length} of ${allProducts.length} Sneakers`;
+      renderGrid(filtered);
+    }
+
+    function renderGrid(products) {
+      const container = document.getElementById('products-grid');
+      if (!container) return;
+
+      if (products.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-24 text-center text-slate-500 space-y-3 font-mono">
+            <i class="fa-solid fa-shoe-prints text-3xl text-slate-600"></i>
+            <p class="text-sm">No sneakers matched your filter criteria.</p>
+            <button onclick="resetFilters()" class="px-4 py-2 rounded-lg bg-white text-black font-bold text-xs uppercase tracking-wider">Reset Filters</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = products.map((p, idx) => {
+        const img = SHOE_ASSETS[idx % SHOE_ASSETS.length];
+        const priceInfo = getProductPrice(p);
+
+        return `
+          <div class="sneaker-card p-5 flex flex-col justify-between group relative">
+            
+            <!-- Top Card Header: Brand Tag & Wishlist Button -->
+            <div class="flex items-center justify-between z-10">
+              <span class="text-[10px] font-mono font-bold uppercase tracking-[0.2em] text-slate-400 px-2.5 py-1 rounded-md bg-white/5 border border-white/10">
+                ${p.brand}
+              </span>
+              <button onclick="toggleWishlist(this)" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center text-slate-400 hover:text-red-400 transition-colors">
+                <i class="fa-regular fa-heart text-xs"></i>
+              </button>
+            </div>
+
+            <!-- Sneaker Image Container -->
+            <div onclick="openProductModal('${p.id}')" class="py-8 aspect-[4/3] flex items-center justify-center cursor-pointer relative">
+              <div class="absolute inset-0 bg-radial from-white/5 to-transparent rounded-full blur-xl pointer-events-none"></div>
+              <img src="${img}" alt="${p.name}" class="sneaker-img w-full h-full object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)]">
+            </div>
+
+            <!-- Card Bottom: Title, Price & Quick Actions -->
+            <div class="space-y-3 pt-2 border-t border-white/10">
+              
+              <div>
+                <div class="flex items-center gap-1 text-[10px] text-amber-400 font-mono mb-1">
+                  <i class="fa-solid fa-star"></i>
+                  <i class="fa-solid fa-star"></i>
+                  <i class="fa-solid fa-star"></i>
+                  <i class="fa-solid fa-star"></i>
+                  <i class="fa-solid fa-star-half-stroke"></i>
+                  <span class="text-slate-300 font-bold ml-1">4.8</span>
+                </div>
+                <h3 onclick="openProductModal('${p.id}')" class="font-heading font-semibold text-xl text-white uppercase tracking-wide line-clamp-1 hover:text-blue-400 transition-colors cursor-pointer">
+                  ${p.name}
+                </h3>
+              </div>
+
+              <!-- Price Row -->
+              <div class="flex items-baseline justify-between">
+                <div>
+                  <div class="font-mono font-bold text-lg text-white">${priceInfo.formatted}</div>
+                  <div class="text-[10px] font-mono text-slate-400 line-through">${priceInfo.mrp}</div>
+                </div>
+                
+                <!-- Quick Add Button -->
+                <button onclick="quickAddToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${priceInfo.paise}, '8', '${img}')" class="w-9 h-9 rounded-xl bg-white hover:bg-slate-200 text-black flex items-center justify-center shadow-lg active:scale-95 transition-all cursor-pointer" title="Add to Bag">
+                  <i class="fa-solid fa-plus text-xs"></i>
+                </button>
+              </div>
+
+              <!-- Instant Checkout Button -->
+              <button onclick="quickAddToCart('${p.id}', '${p.name.replace(/'/g, "\\'")}', ${priceInfo.paise}, '8', '${img}'); executeRazorpayCheckout();" class="w-full py-2 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold text-[11px] uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                <span>Instant Buy</span>
+                <i class="fa-solid fa-arrow-right text-[9px]"></i>
+              </button>
+
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Filter switch helpers
+    function setCategoryFilter(cat, btn) {
+      activeCategory = cat;
+      document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    }
+
+    function setBrandFilter(brand, btn) {
+      activeBrand = brand;
+      document.querySelectorAll('.brand-chip').forEach(b => {
+        b.classList.remove('text-white', 'bg-white/15', 'border-white/20');
+        b.classList.add('text-slate-400', 'bg-white/5', 'border-white/5');
+      });
+      btn.classList.remove('text-slate-400', 'bg-white/5', 'border-white/5');
+      btn.classList.add('text-white', 'bg-white/15', 'border-white/20');
+      applyFilters();
+    }
+
+    function resetFilters() {
+      activeCategory = 'all';
+      activeBrand = 'all';
+      document.getElementById('search-input').value = '';
+      document.getElementById('sort-select').value = 'featured';
+      applyFilters();
+    }
+
+    // Wishlist Toggle
+    function toggleWishlist(btn) {
+      const icon = btn.querySelector('i');
+      if (icon.classList.contains('fa-regular')) {
+        icon.classList.remove('fa-regular');
+        icon.classList.add('fa-solid', 'text-red-500');
+      } else {
+        icon.classList.remove('fa-solid', 'text-red-500');
+        icon.classList.add('fa-regular');
+      }
+    }
+
+    // Quick View Modal
+    function openProductModal(productId) {
+      const product = allProducts.find(p => p.id === productId) || allProducts[0];
+      if (!product) return;
+
+      const priceInfo = getProductPrice(product);
+      const img = SHOE_ASSETS[Math.abs(productId.charCodeAt(productId.length - 1)) % SHOE_ASSETS.length] || SHOE_ASSETS[0];
+
+      const content = document.getElementById('product-modal-content');
+      content.innerHTML = `
+        <button onclick="closeProductModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
+          <div class="md:col-span-6 rounded-2xl bg-[#0A0B0D] p-6 flex items-center justify-center border border-white/10">
+            <img src="${img}" alt="${product.name}" class="w-full h-auto object-contain drop-shadow-2xl">
+          </div>
+
+          <div class="md:col-span-6 space-y-4">
+            <div>
+              <span class="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">${product.brand}</span>
+              <h2 class="font-heading font-bold text-2xl text-white mt-1 uppercase">${product.name}</h2>
+              <div class="text-xl font-mono font-bold text-white mt-1">${priceInfo.formatted}</div>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed font-normal">${product.description || 'Premium sneakers crafted with authentic materials and modern silhouette.'}</p>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-mono text-slate-400 font-bold uppercase">Select Size:</label>
+              <div class="flex gap-2 flex-wrap">
+                <button class="bg-white text-black font-bold px-3.5 py-1.5 rounded-lg text-xs font-mono">UK 7</button>
+                <button class="bg-white/5 text-slate-300 hover:bg-white hover:text-black px-3.5 py-1.5 rounded-lg border border-white/10 text-xs font-mono">UK 8</button>
+                <button class="bg-white/5 text-slate-300 hover:bg-white hover:text-black px-3.5 py-1.5 rounded-lg border border-white/10 text-xs font-mono">UK 9</button>
+                <button class="bg-white/5 text-slate-300 hover:bg-white hover:text-black px-3.5 py-1.5 rounded-lg border border-white/10 text-xs font-mono">UK 10</button>
+              </div>
+            </div>
+
+            <div class="pt-3">
+              <button onclick="quickAddToCart('${product.id}', '${product.name.replace(/'/g, "\\'")}', ${priceInfo.paise}, '8', '${img}'); closeProductModal();" class="w-full py-3.5 rounded-xl bg-white hover:bg-slate-200 text-black font-sans font-bold text-xs uppercase tracking-wider transition-all cursor-pointer">
+                Add to Shopping Bag
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const modal = document.getElementById('product-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        document.getElementById('product-modal-content').classList.remove('scale-95');
+      }, 10);
+    }
+
+    function closeProductModal() {
+      const modal = document.getElementById('product-modal');
+      modal.classList.add('opacity-0');
+      document.getElementById('product-modal-content').classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    // Cart Management
+    function quickAddToCart(id, name, pricePaise, size, image) {
+      const existing = cart.find(item => item.id === id && item.size === size);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({
+          id,
+          name,
+          price_paise: pricePaise,
+          size,
+          image: image || '/assets/urbanstride/Shoe1.png',
+          quantity: 1,
+        });
+      }
+
+      updateCartUI();
+      openCart();
+    }
+
+    function updateCartUI() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      document.getElementById('nav-cart-badge').textContent = totalItems;
+
+      const totalPaise = cart.reduce((sum, item) => sum + (item.price_paise * item.quantity), 0);
+      const totalInr = `₹${(totalPaise / 100).toLocaleString('en-IN')}`;
+
+      document.getElementById('cart-subtotal').textContent = totalInr;
+      document.getElementById('cart-total').textContent = totalInr;
+
+      const container = document.getElementById('cart-items');
+      if (cart.length === 0) {
+        container.innerHTML = `
+          <div class="py-20 text-center text-slate-500 space-y-2">
+            <i class="fa-solid fa-cart-arrow-down text-3xl text-slate-600"></i>
+            <p class="text-xs font-mono">Your shopping bag is empty.</p>
+          </div>
+        `;
+        document.getElementById('checkout-btn').disabled = true;
+        return;
+      }
+
+      document.getElementById('checkout-btn').disabled = false;
+      container.innerHTML = cart.map((item, idx) => `
+        <div class="p-3.5 rounded-2xl bg-[#181A1F] border border-white/10 flex items-center justify-between gap-3">
+          <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-contain bg-black/40 rounded-xl p-1">
+          <div class="flex-1 space-y-0.5">
+            <div class="font-sans font-bold text-white text-xs line-clamp-1">${item.name}</div>
+            <div class="text-[10px] font-mono text-slate-400">Size: ${item.size} • ₹${(item.price_paise / 100).toLocaleString('en-IN')}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex items-center rounded-lg bg-black border border-white/10 text-xs font-mono">
+              <button onclick="changeQty(${idx}, -1)" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white">-</button>
+              <span class="px-1 text-white font-bold">${item.quantity}</span>
+              <button onclick="changeQty(${idx}, 1)" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white">+</button>
+            </div>
+            <button onclick="removeCartItem(${idx})" class="text-slate-500 hover:text-red-400 text-xs px-1">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function changeQty(idx, delta) {
+      cart[idx].quantity += delta;
+      if (cart[idx].quantity <= 0) cart.splice(idx, 1);
+      updateCartUI();
+    }
+
+    function removeCartItem(idx) {
+      cart.splice(idx, 1);
+      updateCartUI();
+    }
+
+    function toggleCart() {
+      const drawer = document.getElementById('cart-drawer');
+      if (drawer.classList.contains('hidden')) {
+        openCart();
+      } else {
+        closeCart();
+      }
+    }
+
+    function openCart() {
+      const drawer = document.getElementById('cart-drawer');
+      drawer.classList.remove('hidden');
+      setTimeout(() => {
+        drawer.classList.remove('opacity-0');
+        drawer.querySelector('.transform').classList.remove('translate-x-full');
+      }, 10);
+    }
+
+    function closeCart() {
+      const drawer = document.getElementById('cart-drawer');
+      drawer.classList.add('opacity-0');
+      drawer.querySelector('.transform').classList.add('translate-x-full');
+      setTimeout(() => {
+        drawer.classList.add('hidden');
+      }, 300);
+    }
+
+    async function executeRazorpayCheckout() {
+      if (cart.length === 0) return;
+
+      const btn = document.getElementById('checkout-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Initializing...';
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: cart[0].id,
+            quantity: cart[0].quantity,
+            size: cart[0].size,
+            session_id: 'storefront_' + Math.random().toString(36).slice(2, 8),
+            human_instruction: 'UrbanStride Catalog Checkout',
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.razorpay_order_id) {
+          alert('Order generation failed: ' + (data.error || 'Stock error'));
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-lock text-xs"></i> Pay with Razorpay';
+          return;
+        }
+
+        const options = {
+          key: 'rzp_test_TSjdfOWmYoGtxa',
+          name: 'UrbanStride Footwear',
+          description: `Order ${data.razorpay_order_id}`,
+          order_id: data.razorpay_order_id,
+          handler: async function (response) {
+            try {
+              const vRes = await fetch('/api/payments/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(response),
+              });
+              const vData = await vRes.json();
+              if (vData.success) {
+                cart = [];
+                updateCartUI();
+                closeCart();
+                alert(`🎉 Payment Verified & Captured!\nPayment ID: ${response.razorpay_payment_id}`);
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          },
+          prefill: {
+            name: 'UrbanStride Customer',
+            email: 'customer@urbanstride.io',
+            contact: '9999999999',
+          },
+          theme: {
+            color: '#3B82F6',
+          },
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        alert('Checkout error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-lock text-xs"></i> Pay with Razorpay';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+  <!-- Google Auth Module -->
+  <script src="/assets/google-auth.js"></script>
+</body>
+</html>

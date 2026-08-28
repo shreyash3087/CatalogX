@@ -31,6 +31,14 @@ CREATE TABLE IF NOT EXISTS orders (
   buyer_agent_id    TEXT,
   session_id        TEXT,
   human_instruction TEXT,
+  customer_name     TEXT,
+  customer_email    TEXT,
+  customer_phone    TEXT,
+  shipping_street   TEXT,
+  shipping_city     TEXT,
+  shipping_state    TEXT,
+  shipping_postal_code TEXT,
+  shipping_country  TEXT,
   razorpay_payment_id TEXT,
   razorpay_signature  TEXT,
   failure_reason    TEXT,
@@ -57,8 +65,23 @@ CREATE TABLE IF NOT EXISTS audit_log (
   timestamp     TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Mandates table — NPCI UAP / Razorpay TokenHQ pre-authorized mandates
+CREATE TABLE IF NOT EXISTS mandates (
+  id                  TEXT PRIMARY KEY,
+  mandate_token       TEXT UNIQUE NOT NULL,
+  status              TEXT NOT NULL DEFAULT 'ACTIVE', -- ACTIVE | REVOKED | EXPIRED
+  auth_payment_id     TEXT,
+  auth_order_id       TEXT,
+  max_limit_paise     INTEGER NOT NULL DEFAULT 150000, -- ₹1,500 default
+  protocol            TEXT NOT NULL DEFAULT 'NPCI_UAP_V1',
+  customer_id         TEXT DEFAULT 'cust_catalogx_owner',
+  created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at          TEXT NOT NULL
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
-CREATE INDEX IF NOT EXISTS idx_orders_session    ON orders(session_id);
+CREATE INDEX IF NOT EXISTS idx_orders_rp_id      ON orders(razorpay_order_id);
 CREATE INDEX IF NOT EXISTS idx_audit_session     ON audit_log(session_id);
 CREATE INDEX IF NOT EXISTS idx_audit_timestamp   ON audit_log(timestamp);
+CREATE INDEX IF NOT EXISTS idx_mandates_token    ON mandates(mandate_token);

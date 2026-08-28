@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { AgentEvent } from '@/hooks/useAgentFeed';
 import { getEventMeta } from '@/lib/eventUtils';
 
@@ -10,81 +11,62 @@ type Props = {
 export default function EventDetail({ event }: Props) {
   if (!event) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <span className="text-3xl mb-3">👆</span>
-        <div className="text-sm font-bold text-slate-800">Select an event</div>
-        <div className="text-xs text-slate-400 max-w-[240px] mt-1 leading-relaxed">
-          Click any step from the live feed in the left sidebar to inspect payloads, LLM thoughts, and receipts.
+      <div className="flex flex-col items-center justify-center h-full text-center px-6">
+        <i className="fa-regular fa-hand-pointer text-2xl text-zinc-600 mb-3" />
+        <div className="text-xs font-semibold text-zinc-400">Select an event</div>
+        <div className="text-[11px] text-zinc-600 mt-1 max-w-[240px] leading-relaxed">
+          Click any step from the Activity Log to inspect payloads and agent reasoning.
         </div>
       </div>
     );
   }
 
   const meta = getEventMeta(event.type);
-
-  // Extract fields to display separately
   const { type, timestamp, reasoning, input_data, output_data, id, session_id, ...rest } = event;
 
   return (
-    <div className="space-y-5">
-      {/* Header Info */}
-      <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-        <span className="text-3xl">{meta.icon}</span>
-        <div>
-          <div className="text-sm font-extrabold font-mono uppercase tracking-wide" style={{ color: meta.color }}>
+    <div className="space-y-3 p-4 overflow-y-auto max-h-full">
+      {/* Header */}
+      <div className="flex items-center gap-3 bg-[#111113] p-3 rounded-lg border border-[#1e1e22]">
+        <div className="w-8 h-8 rounded-lg bg-[#151518] border border-[#27272a] flex items-center justify-center text-[#c8a44e] text-sm">
+          <i className="fa-regular fa-circle-dot" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[12px] font-bold font-mono uppercase tracking-wide text-[#ddb95f]">
             {type}
           </div>
-          <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+          <div className="text-[10px] text-zinc-500 font-mono mt-0.5 truncate">
             {new Date(timestamp).toLocaleString('en-IN')}
-            {session_id && session_id !== 'system' && ` · ${session_id}`}
           </div>
         </div>
       </div>
 
-      {/* Rationale / Explanation */}
       {reasoning && (
-        <div className="space-y-1.5">
-          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reasoning / Execution Note</h4>
-          <div className="p-4 rounded-xl bg-slate-50 border-l-4 border-blue-500 text-xs text-slate-600 leading-relaxed font-medium">
+        <div>
+          <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Reasoning</div>
+          <div className="p-3 rounded-lg bg-[#111113] border-l-2 border-[#c8a44e] text-[11px] text-zinc-400 leading-relaxed">
             {reasoning}
           </div>
         </div>
       )}
 
-      {/* Input data block */}
       {input_data && (
-        <div className="space-y-1.5">
-          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Input Parameter Block</h4>
-          <pre className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-300 font-mono overflow-x-auto max-h-[300px]">
-            {typeof input_data === 'string'
-              ? input_data
-              : JSON.stringify(input_data, null, 2)}
+        <div>
+          <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Input</div>
+          <pre className="p-3 rounded-lg bg-[#0c0c0e] border border-[#1a1a1e] text-[10px] text-zinc-500 font-mono overflow-x-auto max-h-[140px]">
+            {typeof input_data === 'string' ? input_data : JSON.stringify(input_data, null, 2)}
           </pre>
         </div>
       )}
 
-      {/* Output data block */}
       {output_data && (
-        <div className="space-y-1.5">
-          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Output Response Payload</h4>
-          <pre className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-emerald-400 font-mono overflow-x-auto max-h-[300px]">
-            {typeof output_data === 'string'
-              ? output_data
-              : JSON.stringify(output_data, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      {/* Additional fields */}
-      {Object.keys(rest).length > 0 && (
-        <div className="space-y-1.5">
-          <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Event Metadata Context</h4>
-          <pre className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-slate-400 font-mono overflow-x-auto">
-            {JSON.stringify(rest, null, 2)}
+        <div>
+          <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Output</div>
+          <pre className="p-3 rounded-lg bg-[#0c0c0e] border border-[#1a1a1e] text-[10px] text-[#a8926a] font-mono overflow-x-auto max-h-[140px]">
+            {typeof output_data === 'string' ? output_data : JSON.stringify(output_data, null, 2)}
           </pre>
         </div>
       )}
     </div>
   );
-
 }

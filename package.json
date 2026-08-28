@@ -10,7 +10,10 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=merchant-server\" \"npm run dev --workspace=buyer-agent\" \"npm run dev --workspace=dashboard\"",
-    "merchant": "npm run dev --workspace=merchant-server",
+    "merchant": "npm run start:urbanstride --workspace=merchant-server",
+    "merchant:urbanstride": "npm run start:urbanstride --workspace=merchant-server",
+    "merchant:techcart": "npm run start:techcart --workspace=merchant-server",
+    "merchants": "concurrently \"npm run merchant:urbanstride\" \"npm run merchant:techcart\"",
     "agent": "npm run start --workspace=buyer-agent",
     "dashboard": "npm run dev --workspace=dashboard",
     "demo": "node demo.js"

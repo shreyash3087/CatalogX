@@ -29,38 +29,45 @@ const CONFIRM_THRESHOLD        = parseInt(process.env.CONFIRM_THRESHOLD)        
  * @param {object} constraints - parsed user constraints (may override thresholds)
  * @returns {{ tier: string, label: string, description: string }}
  */
+/**
+ * Determine which gate tier applies to this purchase.
+ * @param {number} amountPaise
+ * @param {object} constraints - parsed user constraints (may override thresholds)
+ * @returns {{ tier: string, label: string, description: string }}
+ */
 function determineTier(amountPaise, constraints = {}) {
-  const budget = constraints.budget_max_paise || NOTIFY_THRESHOLD;
-  const autoThreshold = Math.min(AUTO_APPROVE_THRESHOLD, budget);
+  // 1. Hard check: Did user specify an explicit budget and is this item above it?
+  if (constraints.budget_max_paise && amountPaise > constraints.budget_max_paise) {
+    return {
+      tier: 'REJECT',
+      label: '🔴 EXCEEDS USER BUDGET',
+      description: `₹${(amountPaise / 100).toFixed(2)} exceeds your requested budget constraint of ₹${(constraints.budget_max_paise / 100).toFixed(2)}. Purchase rejected.`,
+    };
+  }
 
-  if (amountPaise <= autoThreshold) {
+  // 2. Tier 1: Auto-Approve Micro-Spend (Pre-authorized Mandate)
+  if (amountPaise <= AUTO_APPROVE_THRESHOLD) {
     return {
       tier: 'AUTO',
-      label: '🟢 AUTO-APPROVED',
-      description: `₹${(amountPaise / 100).toFixed(2)} is within auto-approve limit (₹${(autoThreshold / 100).toFixed(2)})`,
+      label: '🟢 TIER 1: AUTO-APPROVE MANDATE',
+      description: `₹${(amountPaise / 100).toFixed(2)} is within the ₹${(AUTO_APPROVE_THRESHOLD / 100).toFixed(2)} pre-authorized micro-spend mandate limit. Agent will execute payment autonomously.`,
     };
   }
 
-  if (amountPaise <= budget) {
+  // 3. Tier 2: Standard Human 1-Click Consent Review (₹1,501 – ₹5,000)
+  if (amountPaise <= 500000) {
     return {
-      tier: 'NOTIFY',
-      label: '🟡 NOTIFYING',
-      description: `₹${(amountPaise / 100).toFixed(2)} is within budget but above auto-approve. Proceeding in 5 seconds...`,
+      tier: 'REVIEW',
+      label: '🟡 TIER 2: 1-CLICK HUMAN CONSENT',
+      description: `₹${(amountPaise / 100).toFixed(2)} is above the auto-approve limit. Requires 1-click human Razorpay checkout authorization.`,
     };
   }
 
-  if (amountPaise <= CONFIRM_THRESHOLD) {
-    return {
-      tier: 'CONFIRM',
-      label: '🟠 REQUIRES CONFIRMATION',
-      description: `₹${(amountPaise / 100).toFixed(2)} exceeds the stated budget (₹${(budget / 100).toFixed(2)}). Human approval required.`,
-    };
-  }
-
+  // 4. Tier 3: High-Value 2FA OTP Gated (> ₹5,000)
   return {
-    tier: 'REJECT',
-    label: '🔴 REJECTED',
-    description: `₹${(amountPaise / 100).toFixed(2)} exceeds the maximum allowed spend (₹${(CONFIRM_THRESHOLD / 100).toFixed(2)}). Purchase refused.`,
+    tier: 'HIGH_VALUE_2FA',
+    label: '🟠 TIER 3: HIGH-VALUE 2FA GATED',
+    description: `₹${(amountPaise / 100).toFixed(2)} is a high-value purchase (> ₹5,000). Razorpay order generated. Mandatory 2FA OTP verification required before funds capture.`,
   };
 }
 
@@ -81,47 +88,28 @@ async function executeGate(amountPaise, product, constraints, auditFn) {
     amount_inr: `₹${(amountPaise / 100).toFixed(2)}`,
     product_name: product.name,
     auto_approve_threshold: `₹${(AUTO_APPROVE_THRESHOLD / 100).toFixed(2)}`,
-    budget: constraints.budget_max_paise ? `₹${(constraints.budget_max_paise / 100).toFixed(2)}` : 'not set',
-    confirm_threshold: `₹${(CONFIRM_THRESHOLD / 100).toFixed(2)}`,
+    budget: constraints.budget_max_paise ? `₹${(constraints.budget_max_paise / 100).toFixed(2)}` : 'unconstrained',
+    policy: gate.label,
   };
 
   if (gate.tier === 'AUTO') {
     console.log(chalk.green(`  ${gate.label}: ${gate.description}`));
-    await auditFn('GATE_CHECKED', gateInfo, { approved: true }, gate.description);
+    await auditFn('GATE_CHECKED', gateInfo, { approved: true, autonomous_execution: true }, gate.description);
     return { approved: true, tier: gate.tier, reasoning: gate.description };
   }
 
-  if (gate.tier === 'NOTIFY') {
+  if (gate.tier === 'REVIEW' || gate.tier === 'HIGH_VALUE_2FA') {
     console.log(chalk.yellow(`\n  ${gate.label}`));
     console.log(chalk.yellow(`  ${gate.description}`));
-    console.log(chalk.yellow('  Proceeding in 5 seconds... (Ctrl+C to cancel)\n'));
-    await auditFn('GATE_CHECKED', gateInfo, { approved: true, delay: '5s' }, gate.description);
-    await sleep(5000);
-    return { approved: true, tier: gate.tier, reasoning: gate.description };
-  }
+    console.log(chalk.gray(`  Product: ${product.name} — ${product.price.display}`));
 
-  if (gate.tier === 'CONFIRM') {
-    console.log(chalk.red(`\n  ${gate.label}`));
-    console.log(chalk.red(`  ${gate.description}`));
-    console.log(chalk.red(`  Product: ${product.name} — ${product.price.display}`));
-
-    const answer = await promptUser(
-      chalk.bold.yellow('\n  Type "yes" to approve or anything else to cancel: ')
-    );
-
-    const approved = answer.trim().toLowerCase() === 'yes';
     await auditFn(
       'GATE_CHECKED',
-      { ...gateInfo, human_response: answer },
-      { approved },
-      approved ? 'Human approved the purchase' : 'Human rejected the purchase'
+      gateInfo,
+      { approved: true, human_gating: 'razorpay_checkout', tier: gate.tier },
+      gate.description
     );
-
-    if (!approved) {
-      console.log(chalk.red('  ❌ Purchase cancelled by human.'));
-    }
-
-    return { approved, tier: gate.tier, reasoning: gate.description };
+    return { approved: true, tier: gate.tier, reasoning: gate.description };
   }
 
   // REJECT

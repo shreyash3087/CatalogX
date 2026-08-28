@@ -33,6 +33,29 @@ function getDb() {
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
   _db.exec(schema);
 
+  // Automatic column migrations for orders table
+  try {
+    const tableInfo = _db.prepare("PRAGMA table_info(orders)").all();
+    const existingCols = new Set(tableInfo.map(c => c.name));
+    const newCols = [
+      { name: 'customer_name', type: 'TEXT' },
+      { name: 'customer_email', type: 'TEXT' },
+      { name: 'customer_phone', type: 'TEXT' },
+      { name: 'shipping_street', type: 'TEXT' },
+      { name: 'shipping_city', type: 'TEXT' },
+      { name: 'shipping_state', type: 'TEXT' },
+      { name: 'shipping_postal_code', type: 'TEXT' },
+      { name: 'shipping_country', type: 'TEXT' }
+    ];
+    for (const col of newCols) {
+      if (!existingCols.has(col.name)) {
+        _db.exec(`ALTER TABLE orders ADD COLUMN ${col.name} ${col.type}`);
+      }
+    }
+  } catch (err) {
+    console.warn('Orders migration note:', err.message);
+  }
+
   return _db;
 }
 

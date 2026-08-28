@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechCart Electronics</title>
+  <meta name="description" content="High-fidelity audio, studio-grade ANC, AMOLED displays and powerful computing gear. Experience seamless Razorpay checkout on TechCart.">
+
+  <!-- Typography: Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/assets/store-notifications.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            heading: ['"Outfit"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            tech: {
+              bg: '#04060A',
+              blue: '#2563EB',
+              blueHover: '#1D4ED8',
+              blueBright: '#3B82F6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #04060A;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1E2538;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2563EB;
+    }
+
+    /* Pure Translucent Blur Navbar (NO background color, NO borders) */
+    .nav-pure-blur {
+      background: transparent !important;
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: none !important;
+    }
+
+    /* Lenis Smooth Scroll (Exact as UrbanStride) */
+    html.lenis, html.lenis body {
+      height: auto;
+    }
+    .lenis.lenis-smooth {
+      scroll-behavior: auto !important;
+    }
+    .lenis.lenis-smooth [data-lenis-prevent] {
+      overscroll-behavior: contain;
+    }
+
+    /* Frameless Editorial Elements */
+    .frameless-item {
+      position: relative;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .frameless-item:hover .img-reveal {
+      transform: scale(1.06) translateY(-4px);
+    }
+    .img-reveal {
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Ambient Soft Glow */
+    .ambient-glow {
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, transparent 70%);
+      filter: blur(40px);
+      pointer-events: none;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+
+<body class="bg-[#04060A] text-slate-100 font-sans antialiased overflow-x-hidden selection:bg-[#2563EB] selection:text-white">
+
+  <!-- 1. NAVIGATION BAR (PURE BLUR ONLY, NO BG COLOR) -->
+  <header class="fixed top-0 left-0 right-0 z-50 nav-pure-blur">
+    <div class="max-w-[1360px] mx-auto px-6 sm:px-10 h-20 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <a href="/" class="flex items-center gap-2.5 group">
+        <div class="w-8 h-8 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <img src="/assets/techcart/logo.png" alt="TechCart Logo" class="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(37,99,235,0.6)]">
+        </div>
+        <div>
+          <div class="font-heading font-bold text-xl text-white tracking-tight leading-none">
+            TechCart
+          </div>
+          <span class="text-[7.5px] font-semibold tracking-[0.25em] text-slate-400 block mt-0.5 uppercase">ELECTRONICS</span>
+        </div>
+      </a>
+
+      <!-- Center Navigation Links -->
+      <nav class="hidden md:flex items-center gap-9 font-medium text-xs sm:text-[13px] text-slate-300">
+        <a href="#hero" class="hover:text-white transition-colors">Home</a>
+        <a href="#departments" class="hover:text-white transition-colors">Collections</a>
+        <a href="/products.html?category=audio" class="hover:text-white transition-colors">Audio & ANC</a>
+        <a href="/products.html?category=wearables" class="hover:text-white transition-colors">Wearables</a>
+        <a href="/products.html?category=computing" class="hover:text-white transition-colors">Computing</a>
+      </nav>
+
+      <!-- Right Tools: Search & Cart Button with Badge -->
+      <div class="flex items-center gap-5">
+        <button onclick="scrollToProducts()" class="text-slate-300 hover:text-white transition-colors p-1" title="Search">
+          <i class="fa-solid fa-magnifying-glass text-sm"></i>
+        </button>
+
+        <button onclick="toggleCart()" class="relative text-slate-300 hover:text-white transition-colors p-1 flex items-center" title="Cart">
+          <i class="fa-solid fa-bag-shopping text-sm"></i>
+          <span id="nav-cart-badge" class="absolute -top-1.5 -right-2 bg-[#2563EB] text-white font-mono text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow">3</span>
+        </button>
+
+        <!-- Google Auth Mount -->
+        <div class="store-google-auth-mount"></div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- 2. HERO SECTION -->
+  <section id="hero" class="relative min-h-[92vh] pt-32 pb-16 flex items-center overflow-hidden bg-cover bg-center bg-no-repeat" style="background-image: url('/assets/techcart/hero_bg.png'); background-color: #04060A;">
+    
+    <!-- Subtle dark overlay on left for typography contrast -->
+    <div class="absolute inset-0 bg-gradient-to-r from-[#04060A]/90 via-[#04060A]/60 to-transparent pointer-events-none z-0"></div>
+
+    <div class="max-w-[1360px] mx-auto px-6 sm:px-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+      
+      <!-- Hero Left: Content -->
+      <div class="lg:col-span-6 space-y-6 text-left">
+        
+        <!-- Star Badge -->
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] text-slate-300 font-medium tracking-wide">
+          <span class="text-slate-400 text-xs">✦</span>
+          <span>NEW 2026 HARDWARE COLLECTION</span>
+        </div>
+
+        <!-- Main Headline -->
+        <h1 class="font-heading font-extrabold text-5xl sm:text-6xl xl:text-[68px] leading-[1.0] tracking-tight uppercase text-white">
+          PRECISION AUDIO <br>
+          & <span class="text-[#2563EB]">NEXT-GEN</span> <br>
+          WEARABLES
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="text-xs sm:text-[13px] text-slate-300 font-normal max-w-md leading-relaxed">
+          High-fidelity audio, studio-grade ANC, AMOLED displays and powerful computing gear, engineered for the way you live.
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-wrap items-center gap-3.5 pt-2">
+          <a href="/products.html" class="px-7 py-3 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-heading font-bold text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95">
+            SHOP COLLECTION
+          </a>
+          <a href="#departments" class="px-7 py-3 rounded-lg border border-white/20 bg-white/[0.03] text-white font-heading font-bold text-xs uppercase tracking-wider hover:bg-white/10 hover:border-white transition-all">
+            BROWSE CATEGORIES
+          </a>
+        </div>
+
+        <!-- 3 Hardware Badges -->
+        <div class="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 max-w-lg">
+          <div class="flex items-start gap-2.5">
+            <i class="fa-solid fa-shield-halved text-slate-400 text-sm mt-0.5"></i>
+            <div>
+              <div class="text-xs font-bold text-white leading-tight">Ultra-Low Latency</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">High-Res Bluetooth 5.4</div>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2.5">
+            <i class="fa-solid fa-bolt text-[#2563EB] text-sm mt-0.5"></i>
+            <div>
+              <div class="text-xs font-bold text-white leading-tight">70-Hour Playback</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">ASAP Fast Charge</div>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2.5">
+            <i class="fa-solid fa-microchip text-slate-400 text-sm mt-0.5"></i>
+            <div>
+              <div class="text-xs font-bold text-white leading-tight">Titanium & IP68</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Built to Last</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hero Right: Floating Layer (hero.png) + Floating Spec Card -->
+      <div class="lg:col-span-6 relative flex items-center justify-center min-h-[460px]">
+        
+        <!-- Floating Gadget Layer (hero.png) -->
+        <div class="relative w-full max-w-[560px] group cursor-pointer" onclick="openProductModal('elec_003')">
+          <img id="hero-gadget" src="/assets/techcart/hero.png" alt="TechCart Flagship Audio Module" class="w-full h-auto object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.9)] group-hover:scale-105 transition-transform duration-300">
+        </div>
+
+        <!-- Floating Spec Pill Card -->
+        <div class="absolute bottom-2 sm:bottom-4 right-2 sm:right-6 backdrop-blur-xl bg-[#060910]/90 border border-white/15 rounded-2xl px-5 py-3.5 flex items-center justify-between gap-6 shadow-2xl z-20">
+          <div class="space-y-0.5">
+            <div class="text-[9px] font-mono text-[#3B82F6] uppercase tracking-widest font-bold">FLAGSHIP HEADPHONE</div>
+            <div class="text-xs font-bold text-white font-sans">Sony Dual V1 Noise Cancelling Processor</div>
+          </div>
+          <button onclick="quickAddToCart('elec_003', 'Sony WH-CH720N Noise Cancelling', 999000, 'onesize', '/assets/techcart/headphones.jpg')" class="px-3.5 py-1.5 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-mono font-bold text-xs uppercase tracking-wider transition-colors shadow">
+            ₹9,990
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 3. SHOP BY DEPARTMENT (PREMIUM FRAMELESS EDITORIAL SHOWCASE) -->
+  <section id="departments" class="max-w-[1360px] mx-auto px-6 sm:px-10 py-24">
+    
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-16">
+      <div class="space-y-1">
+        <div class="text-[10px] font-mono uppercase tracking-[0.25em] text-[#3B82F6] font-bold">EXPLORE BY CATEGORY</div>
+        <h2 class="font-heading font-extrabold text-4xl sm:text-5xl text-white uppercase tracking-tight">
+          SHOP BY DEPARTMENT
+        </h2>
+      </div>
+      <a href="/products.html" class="text-xs font-bold text-[#3B82F6] hover:text-white uppercase tracking-wider flex items-center gap-2 transition-colors">
+        <span>VIEW ALL CATEGORIES</span>
+        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+      </a>
+    </div>
+
+    <!-- 4 Frameless Editorial Departments -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+      
+      <!-- Dept 1: Audio -->
+      <a href="/products.html?category=audio" class="frameless-item group flex flex-col justify-between cursor-pointer">
+        <div class="relative aspect-square flex items-center justify-center p-6 rounded-3xl bg-gradient-to-b from-white/[0.03] to-transparent group-hover:from-white/[0.07] transition-colors">
+          <div class="ambient-glow"></div>
+          <img src="/assets/techcart/headphones.jpg" alt="Audio" class="img-reveal w-48 h-48 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] rounded-2xl relative z-10">
+        </div>
+        <div class="pt-6 space-y-1 text-center sm:text-left">
+          <div class="text-[10px] font-mono text-[#3B82F6] font-bold uppercase tracking-wider">01 // SOUND</div>
+          <h3 class="font-heading font-bold text-xl text-white uppercase tracking-wide group-hover:text-[#3B82F6] transition-colors">
+            AUDIO
+          </h3>
+          <p class="text-xs text-slate-400">Headphones, Earbuds & Monitors</p>
+        </div>
+      </a>
+
+      <!-- Dept 2: Wearables -->
+      <a href="/products.html?category=wearables" class="frameless-item group flex flex-col justify-between cursor-pointer">
+        <div class="relative aspect-square flex items-center justify-center p-6 rounded-3xl bg-gradient-to-b from-white/[0.03] to-transparent group-hover:from-white/[0.07] transition-colors">
+          <div class="ambient-glow"></div>
+          <img src="/assets/techcart/smartwatch.jpg" alt="Wearables" class="img-reveal w-48 h-48 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] rounded-2xl relative z-10">
+        </div>
+        <div class="pt-6 space-y-1 text-center sm:text-left">
+          <div class="text-[10px] font-mono text-[#3B82F6] font-bold uppercase tracking-wider">02 // TELEMETRY</div>
+          <h3 class="font-heading font-bold text-xl text-white uppercase tracking-wide group-hover:text-[#3B82F6] transition-colors">
+            WEARABLES
+          </h3>
+          <p class="text-xs text-slate-400">Smartwatches & Fitness Bands</p>
+        </div>
+      </a>
+
+      <!-- Dept 3: Computing -->
+      <a href="/products.html?category=computing" class="frameless-item group flex flex-col justify-between cursor-pointer">
+        <div class="relative aspect-square flex items-center justify-center p-6 rounded-3xl bg-gradient-to-b from-white/[0.03] to-transparent group-hover:from-white/[0.07] transition-colors">
+          <div class="ambient-glow"></div>
+          <img src="/assets/techcart/keyboard.jpg" alt="Computing" class="img-reveal w-48 h-48 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] rounded-2xl relative z-10">
+        </div>
+        <div class="pt-6 space-y-1 text-center sm:text-left">
+          <div class="text-[10px] font-mono text-[#3B82F6] font-bold uppercase tracking-wider">03 // HARDWARE</div>
+          <h3 class="font-heading font-bold text-xl text-white uppercase tracking-wide group-hover:text-[#3B82F6] transition-colors">
+            COMPUTING
+          </h3>
+          <p class="text-xs text-slate-400">Tactile Keyboards & Precision Mice</p>
+        </div>
+      </a>
+
+      <!-- Dept 4: ANC & Pro Audio -->
+      <a href="/products.html?category=audio" class="frameless-item group flex flex-col justify-between cursor-pointer">
+        <div class="relative aspect-square flex items-center justify-center p-6 rounded-3xl bg-gradient-to-b from-white/[0.03] to-transparent group-hover:from-white/[0.07] transition-colors">
+          <div class="ambient-glow"></div>
+          <img src="/assets/techcart/earbuds.jpg" alt="ANC & Pro Audio" class="img-reveal w-48 h-48 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] rounded-2xl relative z-10">
+        </div>
+        <div class="pt-6 space-y-1 text-center sm:text-left">
+          <div class="text-[10px] font-mono text-[#3B82F6] font-bold uppercase tracking-wider">04 // WIRELESS</div>
+          <h3 class="font-heading font-bold text-xl text-white uppercase tracking-wide group-hover:text-[#3B82F6] transition-colors">
+            ANC & PRO AUDIO
+          </h3>
+          <p class="text-xs text-slate-400">Studio Monitors & TWS Earbuds</p>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- 4. FEATURED PRODUCTS (PREMIUM CARDLESS GALLERY) -->
+  <section id="featured-products" class="max-w-[1360px] mx-auto px-6 sm:px-10 py-24 border-t border-white/5">
+    
+    <div class="flex items-end justify-between mb-16">
+      <div class="space-y-1">
+        <div class="text-[10px] font-mono uppercase tracking-[0.25em] text-[#3B82F6] font-bold">CURATED INVENTORY</div>
+        <h2 class="font-heading font-extrabold text-4xl sm:text-5xl text-white uppercase tracking-tight">
+          FEATURED PRODUCTS
+        </h2>
+      </div>
+      <a href="/products.html" class="text-xs font-bold text-[#3B82F6] hover:text-white uppercase tracking-wider flex items-center gap-2 transition-colors">
+        <span>VIEW ALL PRODUCTS</span>
+        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+      </a>
+    </div>
+
+    <!-- 4 Frameless Product Showcases -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
+      
+      <!-- Product 1: Sandisk Ultra Dual Driver -->
+      <div class="frameless-item group flex flex-col justify-between">
+        <div onclick="openProductModal('elec_001')" class="relative aspect-square flex items-center justify-center p-6 rounded-3xl bg-gradient-to-b from-white/[0.03] to-transparent cursor-pointer">
+          <img src="/assets/techcart/headphones.jpg" alt="Sandisk Ultra Dual Driver Headphone" class="img-reveal w-48 h-48 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] rounded-2xl">
+        </div>
+        
+        <div class="pt-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-widest">SANDISK</span>
+            <div class="flex items-center gap-1 text-[10px] text-amber-400">
+              <i class="fa-solid fa-star"></i>
+              <span class="text-slate-400 font-mono text-[10px] ml-0.5">4.7</span>
+            </div>
+          </div>
+
+          <h3 onclick="openProductModal('elec_001')" class="font-heading font-bold text-base text-white uppercase line-clamp-1 hover:text-[#3B82F6] transition-colors cursor-pointer">
+            SANDISK DUAL DRIVER PRO
+          </h3>
+
+          <div class="flex items-center justify-between pt-1">
+            <div class="font-mono font-bold text-lg text-white">₹1,199</div>
+            <button onclick="quickAddToCart('elec_001', 'Sandisk Ultra Dual Driver Headphone', 119900, 'onesize', '/assets/techcart/headphones.jpg')" class="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#2563EB] text-slate-200 hover:text-white text-xs font-semibold tracking-wider uppercase transition-colors cursor-pointer">
+              + ADD
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product 2: OnePlus Nord Buds 2r -->
+      <div class="frameless-item group flex flex-col justify-between">
+        <div onclick="openProductModal('elec_002')" class="relative aspect-square flex items-center justify-center p-6 rounded-3xl bg-gradient-to-b from-white/[0.03] to-transparent cursor-pointer">
+          <img src="/assets/techcart/earbuds.jpg" alt="OnePlus Nord Buds 2r" class="img-reveal w-48 h-48 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] rounded-2xl">
+        </div>
+        
+        <div class="pt-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-widest">ONEPLUS</span>
+            <div class="flex items-center gap-1 text-[10px] text-amber-400">
+              <i class="fa-solid fa-star"></i>
+              <span class="text-slate-400 font-mono text-[10px] ml-0.5">4.6</span>
+            </div>
+          </div>
+
+          <h3 onclick="openProductModal('elec_002')" class="font-heading font-bold text-base text-white uppercase line-clamp-1 hover:text-[#3B82F6] transition-colors cursor-pointer">
+            ONEPLUS NORD BUDS 2R
+          </h3>
+
+          <div class="flex items-center justify-between pt-1">
+            <div class="font-mono font-bold text-lg text-white">₹2,199</div>
+            <button onclick="quickAddToCart('elec_002', 'OnePlus Nord Buds 2r', 219900, 'onesize', '/assets/techcart/earbuds.jpg')" class="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#2563EB] text-slate-200 hover:text-white text-xs font-semibold tracking-wider uppercase transition-colors cursor-pointer">
+              + ADD
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product 3: Fire-Boltt Gladiator -->
+      <div class="frameless-item group flex flex-col justify-between">
+        <div onclick="openProductModal('elec_005')" class="relative aspect-square flex items-center justify-center p-6 rounded-3xl bg-gradient-to-b from-white/[0.03] to-transparent cursor-pointer">
+          <img src="/assets/techcart/smartwatch.jpg" alt="Fire-Boltt Gladiator" class="img-reveal w-48 h-48 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] rounded-2xl">
+        </div>
+        
+        <div class="pt-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-widest">FIRE-BOLTT</span>
+            <div class="flex items-center gap-1 text-[10px] text-amber-400">
+              <i class="fa-solid fa-star"></i>
+              <span class="text-slate-400 font-mono text-[10px] ml-0.5">4.8</span>
+            </div>
+          </div>
+
+          <h3 onclick="openProductModal('elec_005')" class="font-heading font-bold text-base text-white uppercase line-clamp-1 hover:text-[#3B82F6] transition-colors cursor-pointer">
+            FIRE-BOLTT GLADIATOR
+          </h3>
+
+          <div class="flex items-center justify-between pt-1">
+            <div class="font-mono font-bold text-lg text-white">₹2,499</div>
+            <button onclick="quickAddToCart('elec_005', 'Fire-Boltt Gladiator', 249900, 'onesize', '/assets/techcart/smartwatch.jpg')" class="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#2563EB] text-slate-200 hover:text-white text-xs font-semibold tracking-wider uppercase transition-colors cursor-pointer">
+              + ADD
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product 4: HP Wireless Keyboard & Mouse Combo -->
+      <div class="frameless-item group flex flex-col justify-between">
+        <div onclick="openProductModal('elec_007')" class="relative aspect-square flex items-center justify-center p-6 rounded-3xl bg-gradient-to-b from-white/[0.03] to-transparent cursor-pointer">
+          <img src="/assets/techcart/keyboard.jpg" alt="HP Wireless Keyboard & Mouse Combo" class="img-reveal w-48 h-48 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] rounded-2xl">
+        </div>
+        
+        <div class="pt-5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-widest">HP</span>
+            <div class="flex items-center gap-1 text-[10px] text-amber-400">
+              <i class="fa-solid fa-star"></i>
+              <span class="text-slate-400 font-mono text-[10px] ml-0.5">4.5</span>
+            </div>
+          </div>
+
+          <h3 onclick="openProductModal('elec_007')" class="font-heading font-bold text-base text-white uppercase line-clamp-1 hover:text-[#3B82F6] transition-colors cursor-pointer">
+            HP WIRELESS DESKTOP COMBO
+          </h3>
+
+          <div class="flex items-center justify-between pt-1">
+            <div class="font-mono font-bold text-lg text-white">₹1,299</div>
+            <button onclick="quickAddToCart('elec_007', 'HP Wireless Keyboard & Mouse Combo', 129900, 'onesize', '/assets/techcart/keyboard.jpg')" class="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-[#2563EB] text-slate-200 hover:text-white text-xs font-semibold tracking-wider uppercase transition-colors cursor-pointer">
+              + ADD
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 5. WHY CHOOSE TECHCART (FRAMELESS STRIP WITH SUBTLE DIVIDERS) -->
+  <section class="max-w-[1360px] mx-auto px-6 sm:px-10 py-20 border-t border-white/5">
+    <div class="space-y-12">
+      <div class="text-center">
+        <div class="text-[10px] font-mono uppercase tracking-[0.25em] text-[#3B82F6] font-bold">THE TECHCART STANDARD</div>
+        <h2 class="font-heading font-extrabold text-3xl sm:text-4xl text-white uppercase tracking-tight mt-1">
+          WHY CHOOSE TECHCART
+        </h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 pt-4">
+        
+        <div class="flex flex-col items-center text-center sm:items-start sm:text-left space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center text-[#2563EB] text-lg">
+            <i class="fa-solid fa-shield-check"></i>
+          </div>
+          <div class="font-heading font-bold text-sm text-white uppercase tracking-wide">AUTHENTIC PRODUCTS</div>
+          <p class="text-xs text-slate-400 leading-relaxed max-w-xs">100% genuine products with manufacturer brand warranty.</p>
+        </div>
+
+        <div class="flex flex-col items-center text-center sm:items-start sm:text-left space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center text-[#2563EB] text-lg">
+            <i class="fa-solid fa-truck-fast"></i>
+          </div>
+          <div class="font-heading font-bold text-sm text-white uppercase tracking-wide">FAST & FREE SHIPPING</div>
+          <p class="text-xs text-slate-400 leading-relaxed max-w-xs">Free express courier delivery on all prepaid & COD orders.</p>
+        </div>
+
+        <div class="flex flex-col items-center text-center sm:items-start sm:text-left space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center text-[#2563EB] text-lg">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <div class="font-heading font-bold text-sm text-white uppercase tracking-wide">SECURE PAYMENTS</div>
+          <p class="text-xs text-slate-400 leading-relaxed max-w-xs">256-bit encrypted checkout verified by Razorpay.</p>
+        </div>
+
+        <div class="flex flex-col items-center text-center sm:items-start sm:text-left space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center text-[#2563EB] text-lg">
+            <i class="fa-solid fa-rotate-left"></i>
+          </div>
+          <div class="font-heading font-bold text-sm text-white uppercase tracking-wide">7-DAY EASY RETURNS</div>
+          <p class="text-xs text-slate-400 leading-relaxed max-w-xs">Hassle-free instant replacement guarantee within 7 days.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. EDITORIAL SPLIT FEATURE SECTION (FRAMELESS & SEAMLESS) -->
+  <section class="max-w-[1360px] mx-auto px-6 sm:px-10 py-24 border-t border-white/5">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+      
+      <!-- Left: Big Editorial Feature -->
+      <div class="lg:col-span-7 space-y-6">
+        <div class="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-[#3B82F6]">ACOUSTIC EXCELLENCE</div>
+        <h3 class="font-heading font-extrabold text-3xl sm:text-5xl text-white uppercase leading-[1.1] tracking-tight">
+          THE POWER OF PURE <br>
+          <span class="text-[#2563EB]">ACTIVE NOISE</span> CANCELLATION
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal max-w-xl">
+          Equipped with advanced dual noise sensors and Sony integrated V1 processor that filter over 98.6% of ambient frequency interference in real-time.
+        </p>
+
+        <div class="pt-4 flex items-center gap-4">
+          <button onclick="quickAddToCart('elec_003', 'Sony WH-CH720N Noise Cancelling', 999000, 'onesize', '/assets/techcart/headphones.jpg')" class="px-7 py-3 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-heading font-bold text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95">
+            EXPLORE SONY V1 SERIES
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Pure Floating Headphone Visual with Trust Bullets -->
+      <div class="lg:col-span-5 relative flex flex-col items-center lg:items-start space-y-8">
+        
+        <div class="relative w-full max-w-sm flex items-center justify-center">
+          <div class="ambient-glow"></div>
+          <img src="/assets/techcart/headphones.jpg" alt="Sony Headphones" class="w-72 h-72 object-contain drop-shadow-[0_30px_50px_rgba(0,0,0,0.9)] rounded-3xl relative z-10">
+        </div>
+
+        <div class="space-y-2 text-xs text-slate-300 font-medium">
+          <div class="flex items-center gap-2.5"><i class="fa-solid fa-circle-check text-[#3B82F6]"></i> 1-Year Official Brand Warranty</div>
+          <div class="flex items-center gap-2.5"><i class="fa-solid fa-circle-check text-[#3B82F6]"></i> Secure Sealed Packaging</div>
+          <div class="flex items-center gap-2.5"><i class="fa-solid fa-circle-check text-[#3B82F6]"></i> Insured Express Air Delivery</div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 7. FOOTER -->
+  <footer class="border-t border-white/5 bg-[#020408] pt-20 pb-12 text-slate-400 text-xs font-sans">
+    <div class="max-w-[1360px] mx-auto px-6 sm:px-10 space-y-16">
+      
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-10">
+        
+        <!-- Col 1: Brand -->
+        <div class="md:col-span-4 space-y-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 flex items-center justify-center">
+              <img src="/assets/techcart/logo.png" alt="TechCart Logo" class="w-full h-full object-contain">
+            </div>
+            <div>
+              <div class="font-heading font-bold text-lg text-white leading-none">TechCart</div>
+              <span class="text-[7px] font-semibold tracking-[0.25em] text-slate-400 block uppercase">ELECTRONICS</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 max-w-xs leading-relaxed">
+            Premium-audio, next-gen wearables and computing gear for those who demand the best.
+          </p>
+          <div class="flex items-center gap-4 text-slate-400 text-sm pt-2">
+            <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" class="hover:text-white transition-colors"><i class="fa-brands fa-youtube"></i></a>
+          </div>
+        </div>
+
+        <!-- Col 2: SHOP -->
+        <div class="md:col-span-2 space-y-2.5 text-xs">
+          <div class="font-heading font-bold text-white uppercase tracking-wider text-sm mb-3">SHOP</div>
+          <div><a href="/products.html" class="hover:text-white transition-colors">All Products</a></div>
+          <div><a href="/products.html?category=audio" class="hover:text-white transition-colors">Audio</a></div>
+          <div><a href="/products.html?category=wearables" class="hover:text-white transition-colors">Wearables</a></div>
+          <div><a href="/products.html?category=computing" class="hover:text-white transition-colors">Computing</a></div>
+        </div>
+
+        <!-- Col 3: SUPPORT -->
+        <div class="md:col-span-2 space-y-2.5 text-xs">
+          <div class="font-heading font-bold text-white uppercase tracking-wider text-sm mb-3">SUPPORT</div>
+          <div><a href="#" class="hover:text-white transition-colors">Contact Us</a></div>
+          <div><a href="#" class="hover:text-white transition-colors">Shipping & Delivery</a></div>
+          <div><a href="#" class="hover:text-white transition-colors">Returns & Refunds</a></div>
+          <div><a href="#" class="hover:text-white transition-colors">Warranty</a></div>
+        </div>
+
+        <!-- Col 4: COMPANY -->
+        <div class="md:col-span-2 space-y-2.5 text-xs">
+          <div class="font-heading font-bold text-white uppercase tracking-wider text-sm mb-3">COMPANY</div>
+          <div><a href="#" class="hover:text-white transition-colors">About Us</a></div>
+          <div><a href="#" class="hover:text-white transition-colors">Careers</a></div>
+          <div><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></div>
+          <div><a href="#" class="hover:text-white transition-colors">Terms of Service</a></div>
+        </div>
+
+        <!-- Col 5: STAY UPDATED -->
+        <div class="md:col-span-2 space-y-3">
+          <div class="font-heading font-bold text-white uppercase tracking-wider text-sm">STAY UPDATED</div>
+          <p class="text-[11px] text-slate-400">Subscribe to get the latest updates on new products.</p>
+          <form onsubmit="handleNewsletter(event)" class="flex items-center rounded-lg bg-white/[0.04] border border-white/10 overflow-hidden focus-within:border-[#2563EB]">
+            <input type="email" placeholder="Enter your email" required class="bg-transparent px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none w-full">
+            <button type="submit" class="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3 py-2 text-xs flex items-center justify-center">
+              <i class="fa-solid fa-arrow-right"></i>
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <div class="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-[11px]">
+        <div>© 2026 TechCart Electronics. All rights reserved.</div>
+        <div class="flex items-center gap-2">
+          <span>Powered by</span>
+          <span class="font-bold text-slate-300">Razorpay</span>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- 8. CART DRAWER (RAZORPAY INTEGRATED) -->
+  <div id="cart-drawer" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="toggleCart()"></div>
+    
+    <div class="absolute inset-y-0 right-0 max-w-md w-full bg-[#080C14] border-l border-white/10 shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 z-10">
+      
+      <div class="px-6 py-5 border-b border-white/10 flex items-center justify-between bg-[#05080E]">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-bag-shopping text-[#2563EB]"></i>
+          <h2 class="font-heading font-bold text-lg text-white">Your Shopping Bag</h2>
+        </div>
+        <button onclick="toggleCart()" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="cart-items" data-lenis-prevent class="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="p-6 bg-[#04060A] border-t border-white/10 space-y-4">
+        <div class="space-y-1 text-xs font-mono">
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Subtotal</span>
+            <span id="cart-subtotal" class="text-white font-bold">₹5,897.00</span>
+          </div>
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Express Shipping</span>
+            <span class="text-emerald-400 font-bold">FREE</span>
+          </div>
+          <div class="flex items-center justify-between text-base font-heading font-bold text-white pt-2 border-t border-white/10">
+            <span>TOTAL</span>
+            <span id="cart-total" class="text-white font-mono">₹5,897.00</span>
+          </div>
+        </div>
+
+        <button id="checkout-btn" onclick="executeRazorpayCheckout()" class="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-heading font-bold text-xs uppercase tracking-wider shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-40 cursor-pointer">
+          <i class="fa-solid fa-lock text-xs"></i>
+          <span>Pay with Razorpay</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 9. PRODUCT MODAL -->
+  <div id="product-modal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeProductModal()"></div>
+    <div id="product-modal-content" data-lenis-prevent class="relative max-w-2xl w-full bg-[#080C14] rounded-3xl p-6 sm:p-8 border border-white/15 shadow-2xl transform scale-95 transition-transform duration-300 max-h-[90vh] overflow-y-auto z-10">
+      <!-- Rendered dynamically -->
+    </div>
+  </div>
+
+  <!-- 10. JAVASCRIPT STATE ENGINE -->
+  <script>
+    // 1. Lenis Smooth Scrolling (Exact as UrbanStride)
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      smoothWheel: true,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    // 2. Parallax on hero gadget (Exact as UrbanStride)
+    const heroGadget = document.getElementById('hero-gadget');
+    if (heroGadget) {
+      window.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 16;
+        const y = (e.clientY / window.innerHeight - 0.5) * 16;
+        heroGadget.style.transform = `translate(${x}px, ${y}px)`;
+      });
+    }
+
+    // 3. Smooth Anchor Navigation using Lenis
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const targetId = this.getAttribute('href');
+        if (targetId && targetId !== '#') {
+          const targetEl = document.querySelector(targetId);
+          if (targetEl) {
+            e.preventDefault();
+            lenis.scrollTo(targetEl, { offset: -80, duration: 1.2 });
+          }
+        }
+      });
+    });
+
+    function scrollToProducts() {
+      const el = document.getElementById('featured-products');
+      if (el) lenis.scrollTo(el, { offset: -80, duration: 1.2 });
+    }
+
+    // 2. Cart State
+    let cart = [
+      {
+        id: 'elec_001',
+        name: 'Sandisk Ultra Dual Driver Headphone',
+        price_paise: 119900,
+        size: 'onesize',
+        image: '/assets/techcart/headphones.jpg',
+        quantity: 1,
+      },
+      {
+        id: 'elec_002',
+        name: 'OnePlus Nord Buds 2r',
+        price_paise: 219900,
+        size: 'onesize',
+        image: '/assets/techcart/earbuds.jpg',
+        quantity: 1,
+      },
+      {
+        id: 'elec_005',
+        name: 'Fire-Boltt Gladiator',
+        price_paise: 249900,
+        size: 'onesize',
+        image: '/assets/techcart/smartwatch.jpg',
+        quantity: 1,
+      }
+    ];
+
+    const PRODUCTS_CATALOG = {
+      'elec_001': {
+        name: 'Sandisk Ultra Dual Driver Headphone',
+        price_paise: 119900,
+        image: '/assets/techcart/headphones.jpg',
+        brand: 'Sandisk',
+        description: 'Ultra dynamic dual driver audio monitors with high-isolation acoustic earcups.',
+      },
+      'elec_002': {
+        name: 'OnePlus Nord Buds 2r',
+        price_paise: 219900,
+        image: '/assets/techcart/earbuds.jpg',
+        brand: 'OnePlus',
+        description: 'True wireless in-ear earbuds with 12.4mm dynamic drivers and dual mic noise cancellation.',
+      },
+      'elec_005': {
+        name: 'Fire-Boltt Gladiator',
+        price_paise: 249900,
+        image: '/assets/techcart/smartwatch.jpg',
+        brand: 'Fire-Boltt',
+        description: '1.96" AMOLED display smartwatch with biometric heart and SpO2 tracking.',
+      },
+      'elec_007': {
+        name: 'HP Wireless Keyboard & Mouse Combo',
+        price_paise: 129900,
+        image: '/assets/techcart/keyboard.jpg',
+        brand: 'HP',
+        description: 'Ergonomic low-profile wireless mechanical keyboard and optical precision mouse combo.',
+      },
+      'elec_003': {
+        name: 'Sony WH-CH720N Noise Cancelling',
+        price_paise: 999000,
+        image: '/assets/techcart/headphones.jpg',
+        brand: 'Sony',
+        description: 'Lightweight dual-sensor active noise cancelling headphones with Sony V1 processor.',
+      },
+    };
+
+    function scrollToProducts() {
+      document.getElementById('featured-products')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function openProductModal(productId) {
+      const p = PRODUCTS_CATALOG[productId] || PRODUCTS_CATALOG['elec_001'];
+      const formatted = `₹${(p.price_paise / 100).toLocaleString('en-IN')}`;
+
+      const content = document.getElementById('product-modal-content');
+      content.innerHTML = `
+        <button onclick="closeProductModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pt-2">
+          <div class="md:col-span-6 rounded-2xl bg-[#04060A] p-6 flex items-center justify-center border border-white/10">
+            <img src="${p.image}" alt="${p.name}" class="w-full h-auto object-contain drop-shadow-2xl rounded-xl">
+          </div>
+
+          <div class="md:col-span-6 space-y-4 font-sans">
+            <div>
+              <span class="text-[10px] font-semibold text-[#3B82F6] uppercase tracking-widest">${p.brand}</span>
+              <h2 class="font-heading font-bold text-2xl text-white mt-1 uppercase">${p.name}</h2>
+              <div class="text-2xl font-mono font-bold text-white mt-1">${formatted}</div>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed font-normal">${p.description}</p>
+
+            <div class="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-slate-300 space-y-1.5 font-medium">
+              <div class="flex items-center gap-2"><i class="fa-solid fa-shield-check text-[#3B82F6]"></i> 1-Year Official Brand Warranty</div>
+              <div class="flex items-center gap-2"><i class="fa-solid fa-truck-fast text-emerald-400"></i> Free Insured Express Delivery</div>
+            </div>
+
+            <div class="pt-3">
+              <button onclick="quickAddToCart('${productId}', '${p.name.replace(/'/g, "\\'")}', ${p.price_paise}, 'onesize', '${p.image}'); closeProductModal();" class="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-heading font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg">
+                Add to Shopping Bag
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const modal = document.getElementById('product-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        document.getElementById('product-modal-content').classList.remove('scale-95');
+      }, 10);
+    }
+
+    function closeProductModal() {
+      const modal = document.getElementById('product-modal');
+      modal.classList.add('opacity-0');
+      document.getElementById('product-modal-content').classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    function quickAddToCart(id, name, pricePaise, size, image) {
+      const existing = cart.find(item => item.id === id);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({
+          id,
+          name,
+          price_paise: pricePaise,
+          size,
+          image,
+          quantity: 1,
+        });
+      }
+
+      updateCartUI();
+      openCart();
+    }
+
+    function updateCartUI() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      document.getElementById('nav-cart-badge').textContent = totalItems;
+
+      const totalPaise = cart.reduce((sum, item) => sum + (item.price_paise * item.quantity), 0);
+      const totalInr = `₹${(totalPaise / 100).toLocaleString('en-IN')}`;
+
+      document.getElementById('cart-subtotal').textContent = totalInr;
+      document.getElementById('cart-total').textContent = totalInr;
+
+      const container = document.getElementById('cart-items');
+      if (cart.length === 0) {
+        container.innerHTML = `
+          <div class="py-20 text-center text-slate-500 space-y-2">
+            <i class="fa-solid fa-bag-shopping text-3xl text-slate-600"></i>
+            <p class="text-xs">Your shopping bag is empty.</p>
+          </div>
+        `;
+        document.getElementById('checkout-btn').disabled = true;
+        return;
+      }
+
+      document.getElementById('checkout-btn').disabled = false;
+      container.innerHTML = cart.map((item, idx) => `
+        <div class="p-3.5 rounded-xl bg-[#0E131E] border border-white/10 flex items-center justify-between gap-3">
+          <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-contain bg-black/40 rounded p-1">
+          <div class="flex-1 space-y-0.5">
+            <div class="font-heading font-bold text-white text-xs line-clamp-1">${item.name}</div>
+            <div class="text-[10px] font-mono text-slate-300">₹${(item.price_paise / 100).toLocaleString('en-IN')}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex items-center rounded bg-black border border-white/10 text-xs font-mono">
+              <button onclick="changeQty(${idx}, -1)" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white">-</button>
+              <span class="px-1 text-white font-bold">${item.quantity}</span>
+              <button onclick="changeQty(${idx}, 1)" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white">+</button>
+            </div>
+            <button onclick="removeCartItem(${idx})" class="text-slate-500 hover:text-red-400 text-xs px-1">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function changeQty(idx, delta) {
+      cart[idx].quantity += delta;
+      if (cart[idx].quantity <= 0) cart.splice(idx, 1);
+      updateCartUI();
+    }
+
+    function removeCartItem(idx) {
+      cart.splice(idx, 1);
+      updateCartUI();
+    }
+
+    function toggleCart() {
+      const drawer = document.getElementById('cart-drawer');
+      if (drawer.classList.contains('hidden')) {
+        openCart();
+      } else {
+        closeCart();
+      }
+    }
+
+    function openCart() {
+      const drawer = document.getElementById('cart-drawer');
+      drawer.classList.remove('hidden');
+      setTimeout(() => {
+        drawer.classList.remove('opacity-0');
+        drawer.querySelector('.transform').classList.remove('translate-x-full');
+      }, 10);
+    }
+
+    function closeCart() {
+      const drawer = document.getElementById('cart-drawer');
+      drawer.classList.add('opacity-0');
+      drawer.querySelector('.transform').classList.add('translate-x-full');
+      setTimeout(() => {
+        drawer.classList.add('hidden');
+      }, 300);
+    }
+
+    async function executeRazorpayCheckout() {
+      if (cart.length === 0) return;
+
+      const btn = document.getElementById('checkout-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Initializing...';
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_id: cart[0].id,
+            quantity: cart[0].quantity,
+            size: cart[0].size || 'onesize',
+            session_id: 'techcart_' + Math.random().toString(36).slice(2, 8),
+            human_instruction: 'TechCart Electronics Checkout',
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.razorpay_order_id) {
+          alert('Order generation failed: ' + (data.error || 'Stock error'));
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-lock text-xs"></i> Pay with Razorpay';
+          return;
+        }
+
+        const options = {
+          key: 'rzp_test_TSjdfOWmYoGtxa',
+          name: 'TechCart Electronics',
+          description: `Order ${data.razorpay_order_id}`,
+          order_id: data.razorpay_order_id,
+          handler: async function (response) {
+            try {
+              const vRes = await fetch('/api/payments/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(response),
+              });
+              const vData = await vRes.json();
+              if (vData.success) {
+                cart = [];
+                updateCartUI();
+                closeCart();
+                alert(`🎉 Payment Verified & Captured!\nPayment ID: ${response.razorpay_payment_id}`);
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          },
+          prefill: {
+            name: 'TechCart Customer',
+            email: 'customer@techcart.io',
+            contact: '9999999999',
+          },
+          theme: {
+            color: '#2563EB',
+          },
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        alert('Checkout error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-lock text-xs"></i> Pay with Razorpay';
+      }
+    }
+
+    function handleNewsletter(e) {
+      e.preventDefault();
+      alert('🎉 Subscribed to TechCart Hardware News!');
+      e.target.reset();
+    }
+
+    document.addEventListener('DOMContentLoaded', updateCartUI);
+  </script>
+
+  <!-- Google Auth Module -->
+  <script src="/assets/google-auth.js"></script>
+</body>
+</html>

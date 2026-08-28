@@ -105,6 +105,11 @@ router.get('/.well-known/agent-catalog', (req, res) => {
         path: '/api/products/:id',
         description: 'Full product details in schema.org JSON-LD format',
       },
+      product_page: {
+        method: 'GET',
+        url_template: `http://localhost:${process.env.PORT || 3001}/product.html?id={product_id}`,
+        description: 'Dynamic customer-facing product details page with specifications and Razorpay checkout',
+      },
       stock_check: {
         method: 'GET',
         path: '/api/products/:id/stock',
@@ -113,12 +118,24 @@ router.get('/.well-known/agent-catalog', (req, res) => {
       create_order: {
         method: 'POST',
         path: '/api/orders',
-        description: 'Create a Razorpay order for a product',
+        description: 'Create a Razorpay order for a product with customer contact and delivery fulfillment address',
         request_schema: {
-          product_id: 'string',
-          size: 'string',
+          product_id: 'string (required)',
+          size: 'string (optional for non-sized items, required for footwear)',
           color: 'string (optional)',
           quantity: 'integer (default: 1)',
+          customer: {
+            name: 'string (required)',
+            email: 'string (required)',
+            phone: 'string (required)',
+          },
+          shipping_address: {
+            street: 'string (required)',
+            city: 'string (required)',
+            state: 'string (required)',
+            postal_code: 'string (required)',
+            country: 'string (default: India)',
+          },
           buyer_agent_id: 'string (optional)',
           session_id: 'string (optional)',
           human_instruction: 'string (optional)',

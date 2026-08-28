@@ -17,6 +17,8 @@ const router = express.Router();
 
 // ─── Helper: format a raw DB row as a clean product object ─────────────────
 function formatProduct(row) {
+  const port = process.env.PORT || 3001;
+  const baseUrl = `http://localhost:${port}`;
   return {
     id: row.id,
     name: row.name,
@@ -34,6 +36,8 @@ function formatProduct(row) {
     stock: row.stock,
     in_stock: row.stock > 0,
     tags: JSON.parse(row.tags || '[]'),
+    image_url: row.image_url || '',
+    product_url: `${baseUrl}/product.html?id=${row.id}`,
     created_at: row.created_at,
   };
 }
@@ -82,7 +86,23 @@ router.post('/search', async (req, res) => {
       sql += ' AND stock > 0';
     }
 
-    const rows = db.prepare(sql).all(params);
+    let rows = db.prepare(sql).all(params);
+
+    // Intelligent Fallback: If category was specified but returned 0 results, fall back to broad catalog search
+    if (rows.length === 0 && filters.category) {
+      let fallbackSql = 'SELECT * FROM products WHERE 1=1';
+      const fallbackParams = { ...params };
+      delete fallbackParams.category;
+
+      if (filters.brand) fallbackSql += " AND lower(brand) = lower(@brand)";
+      if (filters.min_price_paise != null) fallbackSql += ' AND price_paise >= @min_price';
+      if (filters.max_price_paise != null) fallbackSql += ' AND price_paise <= @max_price';
+      if (filters.size) fallbackSql += ` AND sizes LIKE @size`;
+      if (filters.color) fallbackSql += ` AND lower(colors) LIKE lower(@color)`;
+      if (filters.in_stock_only !== false) fallbackSql += ' AND stock > 0';
+
+      rows = db.prepare(fallbackSql).all(fallbackParams);
+    }
 
     if (rows.length === 0) {
       return res.json({

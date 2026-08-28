@@ -69,9 +69,10 @@ cd ../llm && npm install
 ### 2. Start the Merchant Server
 ```bash
 cd merchant-server
-npm run dev
-# → http://localhost:3001
-# → ws://localhost:3001 (WebSocket)
+$env:PORT=3001; $env:DB_NAME="urbanstride.db"; $env:MERCHANT_CATEGORY="footwear"; $env:MERCHANT_NAME="UrbanStride Footwear"; $env:MERCHANT_ID="merchant_urbanstride_001"; node src/index.js
+
+cd merchant-server
+$env:PORT=3002; $env:DB_NAME="techcart.db"; $env:MERCHANT_CATEGORY="electronics"; $env:MERCHANT_NAME="TechCart Electronics"; $env:MERCHANT_ID="merchant_techcart_002"; node src/index.js
 ```
 
 ### 3. Start the Dashboard

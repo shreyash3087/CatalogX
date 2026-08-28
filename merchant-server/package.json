@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
+    "start:urbanstride": "node -e \"process.env.PORT=3001; process.env.DB_NAME='catalog.db'; process.env.MERCHANT_CATEGORY='footwear'; process.env.MERCHANT_NAME='UrbanStride Footwear'; process.env.MERCHANT_ID='merchant_urbanstride_001'; require('./src/index.js');\"",
+    "start:techcart": "node -e \"process.env.PORT=3002; process.env.DB_NAME='techcart.db'; process.env.MERCHANT_CATEGORY='electronics'; process.env.MERCHANT_NAME='TechCart Electronics'; process.env.MERCHANT_ID='merchant_techcart_002'; require('./src/index.js');\"",
     "seed": "node src/db/seed.js"
   },
   "dependencies": {

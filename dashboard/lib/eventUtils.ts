@@ -33,40 +33,46 @@ export function getEventMeta(type: string) {
 }
 
 export function formatEventSummary(event: AgentEvent): string {
+  const out = (event.output_data || {}) as Record<string, any>;
+  const inp = (event.input_data || {}) as Record<string, any>;
+
   switch (event.type) {
-    case 'INSTRUCTION_PARSED':
-      return `Parsed: "${((event.instruction as string) || '').slice(0, 60)}"`;
+    case 'INSTRUCTION_PARSED': {
+      const instr = inp.instruction || event.instruction || out.instruction || '';
+      return `Parsed: "${instr.slice(0, 60)}"`;
+    }
     case 'CATALOG_DISCOVERED': {
-      const m = event as Record<string,unknown>;
-      return `${m.merchant || ''} — ${m.products || 0} products`;
+      const merchant = out.merchant || event.merchant || '';
+      const products = out.products ?? event.products ?? 0;
+      return `${merchant || 'Merchant'} — ${products} products`;
     }
     case 'SEARCH_COMPLETED': {
-      const m = event as Record<string,unknown>;
-      return `Found ${m.count || 0} matches`;
+      const count = out.count ?? event.count ?? 0;
+      return `Found ${count} matches`;
     }
     case 'PRODUCT_SELECTED': {
-      const m = event as Record<string,unknown>;
-      return (m.selected_name as string) || '';
+      return out.selected_name || out.product?.name || event.selected_name || 'Selected product';
     }
     case 'ORDER_CREATED': {
-      const m = event as Record<string,unknown>;
-      return `${m.razorpay_order_id || ''} — ₹${m.amount_inr || ''}`;
+      const orderId = out.razorpay_order_id || inp.razorpay_order_id || event.razorpay_order_id || event.order_id || '';
+      const amount = out.amount?.inr || out.amount_inr || event.amount_inr || '';
+      return `${orderId}${amount ? ` — ₹${amount}` : ''}`;
     }
     case 'PAYMENT_VERIFIED':
     case 'PAYMENT_CAPTURED': {
-      const m = event as Record<string,unknown>;
-      return `Payment ID: ${m.razorpay_payment_id || ''}`;
+      const payId = out.razorpay_payment_id || inp.razorpay_payment_id || event.razorpay_payment_id || '';
+      return `Payment ID: ${payId || 'Captured'}`;
     }
     case 'GATE_CHECKED':
       return (event.reasoning || 'Gate evaluated').slice(0, 80);
     case 'STOCK_OUT':
     case 'STOCK_GATE': {
-      const m = event as Record<string,unknown>;
-      return `${m.product_name || ''} — out of stock`;
+      const prod = out.product_name || inp.product_name || event.product_name || '';
+      return `${prod || 'Item'} — out of stock`;
     }
     case 'FALLBACK_SELECTED': {
-      const m = event as Record<string,unknown>;
-      return `Fallback: ${m.fallback_name || ''}`;
+      const fallback = out.fallback_name || event.fallback_name || '';
+      return `Fallback: ${fallback}`;
     }
     default:
       return (event.reasoning || event.type.replace(/_/g, ' ').toLowerCase()).slice(0, 80);
@@ -103,14 +109,17 @@ export function getPaymentStateFromEvents(events: AgentEvent[]) {
     paymentFailed: false,
   };
   for (const e of events) {
+    const out = (e.output_data || {}) as Record<string, any>;
+    const inp = (e.input_data || {}) as Record<string, any>;
+
     if (e.type === 'ORDER_CREATED') {
       state.orderCreated = true;
-      state.orderID = (e.razorpay_order_id as string) || '';
+      state.orderID = (out.razorpay_order_id || inp.razorpay_order_id || e.razorpay_order_id || '') as string;
     }
     if (e.type === 'PAYMENT_INITIATED') state.paymentInitiated = true;
     if (e.type === 'PAYMENT_VERIFIED' || e.type === 'PAYMENT_CAPTURED') {
       state.paymentDone = true;
-      state.paymentID = (e.razorpay_payment_id as string) || '';
+      state.paymentID = (out.razorpay_payment_id || inp.razorpay_payment_id || e.razorpay_payment_id || '') as string;
     }
     if (e.type === 'PAYMENT_FAILED') state.paymentFailed = true;
   }
@@ -120,8 +129,9 @@ export function getPaymentStateFromEvents(events: AgentEvent[]) {
 export function getGateTierFromEvents(events: AgentEvent[]): string | null {
   for (const e of [...events].reverse()) {
     if (e.type === 'GATE_CHECKED' || e.type === 'GATE_REJECTED') {
-      const input = e.input_data as Record<string, unknown> | null;
-      return (input?.tier as string) || null;
+      const input = (e.input_data || {}) as Record<string, any>;
+      const out = (e.output_data || {}) as Record<string, any>;
+      return (input.tier || out.tier || e.tier as string) || null;
     }
   }
   return null;
@@ -129,16 +139,25 @@ export function getGateTierFromEvents(events: AgentEvent[]): string | null {
 
 export function getStatsFromEvents(events: AgentEvent[]) {
   let sessions = new Set<string>();
+  let purchasedOrders = new Set<string>();
   let completedPurchases = 0;
   let totalSpend = 0;
   let stockOuts = 0;
 
   for (const e of events) {
+    const out = (e.output_data || {}) as Record<string, any>;
+    const inp = (e.input_data || {}) as Record<string, any>;
+
     if (e.session_id) sessions.add(e.session_id);
+
     if (e.type === 'PAYMENT_VERIFIED' || e.type === 'PAYMENT_CAPTURED') {
-      completedPurchases++;
-      const inr = parseFloat((e.amount_inr as string) || '0');
-      totalSpend += inr;
+      const orderKey = (out.razorpay_order_id || inp.razorpay_order_id || e.session_id || e.id) as string;
+      if (!purchasedOrders.has(orderKey)) {
+        purchasedOrders.add(orderKey);
+        completedPurchases++;
+        const inr = parseFloat((out.amount?.inr || out.amount_inr || e.amount_inr || '0') as string);
+        totalSpend += inr;
+      }
     }
     if (e.type === 'STOCK_OUT' || e.type === 'STOCK_OUT_PRE_ORDER') stockOuts++;
   }

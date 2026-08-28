@@ -1,61 +1,82 @@
 @import "tailwindcss";
 
 @theme {
-  --color-aqua: #0ea5e9;
-  --color-chambray: #2563eb;
-  --color-hinting-blue: #f8fafc;
-  --color-adept: #475569;
-  --color-carbon: #0f172a;
-  
-  --color-gate-auto: #10b981;
-  --color-gate-notify: #f59e0b;
+  --color-main-bg: #0B0D0E;
+  --color-card-bg: #111315;
+  --color-card-border: #292C2F;
+  --color-card-hover: #16181B;
+  --color-text-primary: #F5F1E8;
+  --color-text-secondary: #A9A49A;
+  --color-gold-accent: #D9A52E;
+  --color-gold-bright: #E0AA32;
+  --color-gold-glow: rgba(217, 165, 46, 0.15);
+
+  --color-gate-auto: #22c55e;
+  --color-gate-notify: #D9A52E;
   --color-gate-confirm: #f97316;
   --color-gate-reject: #ef4444;
 }
 
-/* Base style resets */
 @layer base {
+  * {
+    box-sizing: border-box;
+  }
+
   body {
-    background-color: var(--color-hinting-blue);
-    color: var(--color-carbon);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    min-height: 100vh;
-    background-image: 
-      radial-gradient(ellipse at 20% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 20%, rgba(37, 99, 235, 0.04) 0%, transparent 50%);
-    background-attachment: fixed;
-    position: relative;
-  }
-
-  /* Grid overlay for a professional tech feel */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(71, 85, 105, 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(71, 85, 105, 0.02) 1px, transparent 1px);
-    background-size: 32px 32px;
-    pointer-events: none;
-    z-index: 0;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    height: 100vh;
+    overflow: hidden;
   }
 }
 
-/* Custom micro-animations & utilities */
-@keyframes pulse-step {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+/* Hide Scrollbars Globally While Keeping Smooth Scrolling */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+  display: none;
 }
 
-.animate-pulse-step {
-  animation: pulse-step 1.5s infinite;
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-@keyframes dot-ping {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.6; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-.animate-dot-ping {
-  animation: dot-ping 1.2s infinite;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Razorpay Glowing Line & Aura Animations */
+@keyframes lineExpand {
+  0% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.75;
+    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.7));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 14px rgba(96, 165, 250, 1));
+  }
+}
+
+.animate-line-expand {
+  animation: lineExpand 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 2.4s ease-in-out infinite;
 }

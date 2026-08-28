@@ -35,6 +35,7 @@ const discoveryRouter = require('./routes/discovery');
 const productsRouter = require('./routes/products');
 const ordersRouter = require('./routes/orders');
 const paymentsRouter = require('./routes/payments');
+const mandatesRouter = require('./routes/mandates');
 
 const app = express();
 const server = http.createServer(app);
@@ -60,7 +61,14 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Serve human storefront pages
+// Serve merchant-specific storefront pages from their respective directory
+const isElectronics = process.env.MERCHANT_CATEGORY === 'electronics' || String(PORT) === '3002';
+const merchantDir = isElectronics ? 'techcart' : 'urbanstride';
+
+console.log(`[Storefront] Serving ${isElectronics ? 'TechCart Electronics' : 'UrbanStride Footwear'} from /public/${merchantDir} on port ${PORT}`);
+app.use(express.static(path.join(__dirname, `../public/${merchantDir}`)));
+
+// Fallback to shared public root for shared assets (/assets/...)
 app.use(express.static(path.join(__dirname, '../public')));
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
@@ -68,6 +76,7 @@ app.use('/', discoveryRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/payments', paymentsRouter);
+app.use('/api/mandates', mandatesRouter);
 
 // ─── Audit log endpoint ─────────────────────────────────────────────────────
 app.get('/api/audit', (req, res) => {
@@ -122,6 +131,67 @@ app.post('/api/audit/agent', (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to save audit entry', details: err.message });
+  }
+});
+
+// ─── Trigger Buyer Agent Execution (Dashboard Integration) ───────────────────
+app.post('/api/agent/run', async (req, res) => {
+  const { instruction, sessionId, userProfile } = req.body;
+  if (!instruction) {
+    return res.status(400).json({ error: 'Instruction is required' });
+  }
+
+  res.json({ ok: true, status: 'started', sessionId });
+
+  (async () => {
+    try {
+      if (userProfile) {
+        process.env.CATALOGX_USER_PROFILE = JSON.stringify(userProfile);
+      }
+      const { BuyerAgent } = require('../../buyer-agent/src/agent/core');
+      process.env.AGENT_SESSION_ID = sessionId;
+      const agent = new BuyerAgent(sessionId);
+      await agent.run(instruction);
+    } catch (err) {
+      console.error('[Agent Execution Error]:', err);
+    }
+  })();
+});
+
+// ─── Summarize Session Title with Small LLM Call ────────────────────────────
+app.post('/api/agent/title', async (req, res) => {
+  const { message } = req.body;
+  if (!message) {
+    return res.json({ title: 'New Chat' });
+  }
+
+  try {
+    const { chat } = require('../../llm/index');
+    const response = await chat(
+      [
+        {
+          role: 'system',
+          content:
+            'Generate a short 2 to 4 word title summarizing this shopping request. Return ONLY the title with no punctuation and no quotes. Examples: "Running Shoes Search", "Wireless Earbuds", "Mechanical Keyboard".',
+        },
+        {
+          role: 'user',
+          content: message,
+        },
+      ],
+      { maxTokens: 12, temperature: 0.3 }
+    );
+
+    const cleanTitle = (response || '')
+      .trim()
+      .replace(/^["']|["']$/g, '')
+      .replace(/[.]+$/, '');
+
+    res.json({ title: cleanTitle || message.slice(0, 24) });
+  } catch (err) {
+    console.error('[Title Summary Fallback]:', err.message);
+    const fallback = message.slice(0, 24).trim();
+    res.json({ title: fallback.charAt(0).toUpperCase() + fallback.slice(1) });
   }
 });
 

@@ -1,124 +1,82 @@
-'use strict';
+'use client';
 
-type PaymentState = {
-  orderCreated: boolean;
-  orderID: string;
-  paymentInitiated: boolean;
-  paymentDone: boolean;
-  paymentID: string;
-  paymentFailed: boolean;
+import React from 'react';
+
+type Props = {
+  paymentState: {
+    orderCreated: boolean;
+    orderID: string;
+    paymentInitiated: boolean;
+    paymentDone: boolean;
+    paymentID: string;
+    paymentFailed: boolean;
+  };
+  onTriggerCheckout?: (orderId: string) => void;
 };
 
-type Props = { state: PaymentState };
-
-const STEPS = [
-  { key: 'order',   label: 'Order',   icon: '🧾', desc: 'Order Created' },
-  { key: 'init',    label: 'Authorize',icon: '💳', desc: 'Payment Prefilled' },
-  { key: 'capture', label: 'Capture', icon: '💸', desc: 'Payment Captured' },
-  { key: 'verify',  label: 'Verify',   icon: '✅', desc: 'Verified Signature' },
-];
-
-export default function PaymentFlow({ state }: Props) {
-  const stepStatus = {
-    order:   state.orderCreated ? 'done' : 'pending',
-    init:    state.paymentInitiated ? 'done' : state.orderCreated ? 'active' : 'pending',
-    capture: state.paymentDone ? 'done' : state.paymentFailed ? 'error' : state.paymentInitiated ? 'active' : 'pending',
-    verify:  state.paymentDone ? 'done' : 'pending',
-  } as Record<string, string>;
+export default function PaymentFlow({ paymentState, onTriggerCheckout }: Props) {
+  const steps = [
+    { title: 'Order Created', done: paymentState.orderCreated, detail: paymentState.orderID || '—', icon: 'fa-regular fa-file-lines' },
+    { title: 'Spend Gate Verified', done: paymentState.orderCreated, detail: 'Budget approved', icon: 'fa-regular fa-shield-halved' },
+    { title: 'Payment Authorized', done: paymentState.paymentDone, active: paymentState.paymentInitiated && !paymentState.paymentDone, detail: paymentState.paymentID || '—', icon: 'fa-regular fa-lock' },
+    { title: 'Signature Verified', done: paymentState.paymentDone, detail: paymentState.paymentDone ? 'HMAC-SHA256 valid' : '—', icon: 'fa-regular fa-circle-check' },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between py-2">
-        {STEPS.map((step, i) => {
-          const status = stepStatus[step.key];
-          
-          let circleBg = 'bg-white border-slate-200 text-slate-400';
-          let textColor = 'text-slate-400';
-          let borderLine = 'border-slate-200';
-
-          if (status === 'done') {
-            circleBg = 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-sm';
-            textColor = 'text-emerald-700 font-bold';
-          } else if (status === 'active') {
-            circleBg = 'bg-blue-50 border-blue-600 text-blue-600 animate-pulse-step';
-            textColor = 'text-blue-700 font-bold';
-          } else if (status === 'error') {
-            circleBg = 'bg-rose-50 border-rose-500 text-rose-600';
-            textColor = 'text-rose-700 font-bold';
-          }
-
-          return (
-            <div key={step.key} className="flex-1 flex flex-col items-center relative text-center">
-              
-              {/* Connector line */}
-              {i < STEPS.length - 1 && (
-                <div 
-                  className={`absolute top-[18px] left-[50%] right-[-50%] h-[2px] -z-10 transition-colors duration-300 ${
-                    stepStatus[STEPS[i + 1].key] === 'done' || status === 'done'
-                      ? 'bg-emerald-500' 
-                      : 'bg-slate-200'
-                  }`}
-                />
-              )}
-
-              {/* Step Circle */}
-              <div className={`h-9 w-9 rounded-full border-2 flex items-center justify-center text-sm font-semibold z-10 transition-all ${circleBg}`}>
-                {status === 'done' ? '✓' : status === 'error' ? '✗' : step.icon}
-              </div>
-
-              {/* Label */}
-              <div className={`text-[10px] uppercase tracking-wider mt-2.5 ${textColor}`}>
-                {step.label}
-              </div>
-
-              {/* Detail Code tags */}
-              {step.key === 'order' && state.orderID && (
-                <div className="text-[9px] font-mono text-slate-400 mt-1 max-w-[80px] truncate" title={state.orderID}>
-                  {state.orderID}
-                </div>
-              )}
-              {step.key === 'verify' && state.paymentID && (
-                <div className="text-[9px] font-mono text-slate-400 mt-1 max-w-[80px] truncate" title={state.paymentID}>
-                  {state.paymentID}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Identifiers list */}
-      <div className="border-t border-slate-100 pt-4 flex flex-wrap gap-4 text-xs font-medium text-slate-500 justify-between items-center">
-        <div className="flex gap-4 flex-wrap">
-          {state.orderID && (
-            <div>
-              <span className="text-slate-400 font-semibold">Razorpay Order:</span>{' '}
-              <code className="font-mono text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">{state.orderID}</code>
-            </div>
-          )}
-          {state.paymentID && (
-            <div>
-              <span className="text-slate-400 font-semibold">Payment Capture ID:</span>{' '}
-              <code className="font-mono text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">{state.paymentID}</code>
-            </div>
-          )}
+    <div className="p-4 space-y-4 overflow-y-auto max-h-full">
+      {/* CTA if order exists but payment not done */}
+      {paymentState.orderCreated && !paymentState.paymentDone && onTriggerCheckout && (
+        <div className="p-3.5 rounded-lg bg-[#141210] border border-[#2a2520] flex items-center justify-between">
+          <div>
+            <div className="text-[12px] font-semibold text-[#ddb95f]">Order ready for checkout</div>
+            <div className="text-[10px] text-zinc-500 font-mono mt-0.5">{paymentState.orderID}</div>
+          </div>
+          <button
+            onClick={() => onTriggerCheckout(paymentState.orderID)}
+            className="px-4 py-2 bg-[#c8a44e] hover:bg-[#b8943e] text-black font-bold text-[11px] rounded-lg transition-all flex items-center gap-1.5"
+          >
+            <i className="fa-regular fa-credit-card text-[10px]" />
+            Pay with Razorpay
+          </button>
         </div>
+      )}
 
-        {/* Status badges */}
-        <div className="flex items-center gap-2">
-          {state.paymentFailed && !state.paymentDone && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-              ● Payment Failed
+      {/* Steps */}
+      <div className="space-y-2">
+        {steps.map((step, i) => (
+          <div
+            key={i}
+            className={`p-3 rounded-lg border flex items-center gap-3 transition-all ${
+              step.done
+                ? 'bg-[#111113] border-[#1a2e1a]'
+                : step.active
+                ? 'bg-[#13120f] border-[#2a2520]'
+                : 'bg-[#0c0c0e] border-[#151518] opacity-40'
+            }`}
+          >
+            <div
+              className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] flex-shrink-0 ${
+                step.done
+                  ? 'bg-[#16301a] text-emerald-400 border border-[#1a3a1e]'
+                  : step.active
+                  ? 'bg-[#1a1710] text-[#c8a44e] border border-[#2a2520] animate-pulse'
+                  : 'bg-[#111113] text-zinc-600 border border-[#1a1a1e]'
+              }`}
+            >
+              {step.done ? <i className="fa-regular fa-circle-check text-emerald-400" /> : <i className={step.icon} />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[12px] font-semibold text-zinc-300">{step.title}</div>
+              <div className="text-[10px] text-zinc-600 font-mono truncate mt-0.5">{step.detail}</div>
+            </div>
+            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${
+              step.done ? 'text-emerald-500' : step.active ? 'text-[#c8a44e]' : 'text-zinc-600'
+            }`}>
+              {step.done ? 'Done' : step.active ? 'Active' : 'Pending'}
             </span>
-          )}
-          {state.paymentDone && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              ● Verified Paid
-            </span>
-          )}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
-
 }
