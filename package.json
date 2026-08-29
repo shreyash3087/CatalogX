@@ -1,22 +1,22 @@
 {
   "name": "catalogx",
   "version": "1.0.0",
-  "description": "CatalogX — Agentic Commerce Platform for Razorpay AI Buildathon",
+  "description": "CatalogX — Autonomous Agentic Commerce Platform for Razorpay AI Buildathon",
   "private": true,
   "workspaces": [
-    "merchant-server",
-    "buyer-agent",
-    "dashboard"
+    "dashboard",
+    "urbanstride",
+    "techcart",
+    "buyer-agent"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=merchant-server\" \"npm run dev --workspace=buyer-agent\" \"npm run dev --workspace=dashboard\"",
-    "merchant": "npm run start:urbanstride --workspace=merchant-server",
-    "merchant:urbanstride": "npm run start:urbanstride --workspace=merchant-server",
-    "merchant:techcart": "npm run start:techcart --workspace=merchant-server",
-    "merchants": "concurrently \"npm run merchant:urbanstride\" \"npm run merchant:techcart\"",
-    "agent": "npm run start --workspace=buyer-agent",
-    "dashboard": "npm run dev --workspace=dashboard",
-    "demo": "node demo.js"
+    "dev": "concurrently \"npm run dev:catalogx\" \"npm run dev:urbanstride\" \"npm run dev:techcart\"",
+    "dev:catalogx": "npm run dev --workspace=dashboard",
+    "dev:urbanstride": "npm run dev --workspace=urbanstride",
+    "dev:techcart": "npm run dev --workspace=techcart",
+    "start:urbanstride": "npm run dev --workspace=urbanstride",
+    "start:techcart": "npm run dev --workspace=techcart",
+    "agent": "npm run start --workspace=buyer-agent"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -1,11 +1,11 @@
 {
-  "name": "catalogx-dashboard",
-  "version": "0.1.0",
+  "name": "urbanstride-storefront",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start -p 3000",
+    "start": "next start -p 3001",
     "lint": "next lint"
   },
   "dependencies": {
@@ -13,14 +13,17 @@
     "mongodb": "^6.10.0",
     "next": "^16.2.9",
     "postcss": "^8.5.16",
+    "razorpay": "^2.9.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
     "typescript": "^5"
   }
 }
