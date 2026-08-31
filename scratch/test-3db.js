@@ -1,6 +1,6 @@
 const { MongoClient } = require('../urbanstride/node_modules/mongodb');
 
-const uri = 'mongodb+srv://shreyash3087_db_user:NOMnwQ33KaQriDfx@cluster0.u43ndu4.mongodb.net/?appName=Cluster0';
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 
 async function testAllDatabases() {
   const client = new MongoClient(uri, { serverSelectionTimeoutMS: 8000 });

@@ -1,8 +1,6 @@
 import { MongoClient, Db } from 'mongodb';
 
-const MONGODB_URI =
-  process.env.MONGODB_URI ||
-  'mongodb+srv://shreyash3087_db_user:NOMnwQ33KaQriDfx@cluster0.u43ndu4.mongodb.net/?appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = process.env.MONGODB_DB_NAME || 'catalogx_db';
 
 let client: MongoClient | null = null;

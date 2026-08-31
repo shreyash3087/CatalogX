@@ -3,63 +3,85 @@
 import React from 'react';
 import Link from 'next/link';
 
-export default function Navbar() {
+type Props = {
+  cartCount?: number;
+  onOpenCart?: () => void;
+};
+
+export default function Navbar({ cartCount = 0, onOpenCart }: Props) {
   return (
-    <header className="sticky top-0 z-50 bg-[#080C14]/90 backdrop-blur-md border-b border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className="fixed top-0 left-0 right-0 z-50 nav-glass-pure">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 h-16 sm:h-[72px] flex items-center justify-between">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-black font-extrabold text-lg shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
-            ⚡
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-8 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/urbanstride/logo.png"
+              alt="UrbanStride Logo"
+              className="w-full h-full object-contain drop-shadow-[0_4px_10px_rgba(255,255,255,0.2)]"
+            />
           </div>
           <div>
-            <div className="text-base font-extrabold text-white tracking-tight flex items-center gap-1.5">
-              <span>UrbanStride</span>
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                Agent-Ready
-              </span>
+            <div className="font-heading font-semibold text-xl sm:text-2xl text-white tracking-wider leading-none">
+              UrbanStride
             </div>
-            <div className="text-[10px] text-slate-400 font-medium">Performance Footwear</div>
+            <span className="text-[7.5px] font-bold tracking-[0.3em] text-slate-400 block mt-0.5 uppercase font-mono">
+              FOOTWEAR
+            </span>
           </div>
         </Link>
 
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-300">
-          <Link href="/" className="hover:text-white transition-colors">
-            Home
+        {/* Center Navigation Links */}
+        <nav className="hidden md:flex items-center gap-8 font-medium text-xs sm:text-[13px] text-slate-200">
+          <Link href="/products" className="hover:text-white transition-colors font-bold text-white">
+            Shop All
           </Link>
-          <Link href="/products" className="hover:text-white transition-colors">
-            Catalog & Shoes
+          <Link href="/#collections" className="hover:text-white transition-colors">
+            Collections
+          </Link>
+          <Link href="/#brands" className="hover:text-white transition-colors">
+            Brands
           </Link>
           <Link href="/products?category=running-shoes" className="hover:text-white transition-colors">
-            Running
+            New Arrivals
           </Link>
-          <Link href="/products?category=hiking-boots" className="hover:text-white transition-colors">
-            Trail & Hiking
-          </Link>
-          <Link href="/products?category=casual-sneakers" className="hover:text-white transition-colors">
-            Sneakers
+          <Link href="/#about" className="hover:text-white transition-colors">
+            About Us
           </Link>
         </nav>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          <a
-            href="http://localhost:3000"
-            target="_blank"
-            rel="noreferrer"
-            className="px-3.5 py-1.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-bold transition-all flex items-center gap-1.5"
-          >
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            <span>CatalogX Agent</span>
-          </a>
-
+        {/* Right Tools */}
+        <div className="flex items-center gap-5">
           <Link
             href="/products"
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-all cursor-pointer"
+            className="text-slate-200 hover:text-white transition-colors p-1"
+            title="Search Shoes"
           >
-            Shop Now
+            <i className="fa-solid fa-magnifying-glass text-sm"></i>
           </Link>
+
+          {/* Interactive Shopping Cart Bag Trigger */}
+          <button
+            onClick={onOpenCart}
+            className="relative text-slate-200 hover:text-white transition-colors p-1 flex items-center cursor-pointer"
+            title="Open Shopping Bag"
+          >
+            <i className="fa-solid fa-bag-shopping text-base"></i>
+            {cartCount > 0 && (
+              <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center font-mono ml-1 shadow-md">
+                {cartCount}
+              </span>
+            )}
+          </button>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={onOpenCart}
+            className="md:hidden text-slate-300 hover:text-white p-1"
+          >
+            <i className="fa-solid fa-bars text-sm"></i>
+          </button>
         </div>
       </div>
     </header>

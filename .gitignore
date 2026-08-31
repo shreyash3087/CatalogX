@@ -8,6 +8,11 @@ node_modules/
 .env.local
 .env.*.local
 .env.production
+.env.staging
+.env.development
+**/.env
+**/.env.local
+**/.env.*.local
 
 # Build outputs
 dist/
@@ -37,5 +42,11 @@ Thumbs.db
 .vscode/settings.json
 .idea/
 
-# Razorpay / secrets
+# Secrets, keys, certificates & credentials
 razorpay_secrets.json
+credentials.json
+client_secret*.json
+*.pem
+*.key
+*.cert
+*.pfx

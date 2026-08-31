@@ -1,15 +1,51 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import TechCartCartDrawer, { CartItem } from '@/components/CartDrawer';
 import CheckoutModal from '@/components/CheckoutModal';
 import { ELECTRONICS_PRODUCTS, Product } from '@/lib/products';
 
 export default function TechCartHomePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('techcart_cart');
+      if (stored) setCart(JSON.parse(stored));
+    } catch (e) {}
+  }, []);
+
+  const saveCart = (newCart: CartItem[]) => {
+    setCart(newCart);
+    try {
+      localStorage.setItem('techcart_cart', JSON.stringify(newCart));
+    } catch (e) {}
+  };
+
+  const handleUpdateQuantity = (index: number, newQty: number) => {
+    if (newQty <= 0) {
+      handleRemoveItem(index);
+      return;
+    }
+    const updated = [...cart];
+    updated[index].quantity = newQty;
+    saveCart(updated);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    const updated = cart.filter((_, i) => i !== index);
+    saveCart(updated);
+  };
+
+  const handleClearCart = () => {
+    saveCart([]);
+  };
 
   const featured = ELECTRONICS_PRODUCTS.slice(0, 4);
 
@@ -18,163 +54,295 @@ export default function TechCartHomePage() {
     setIsModalOpen(true);
   };
 
+  const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
+    <div className="flex flex-col min-h-screen bg-[#04060A] text-slate-100 font-sans selection:bg-[#2563EB] selection:text-white">
+      <Navbar cartCount={totalCartCount} onOpenCart={() => setIsCartOpen(true)} />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 md:py-28 bg-gradient-to-b from-[#06080F] via-[#0A1020] to-[#06080F]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(6,182,212,0.15)_0%,_transparent_60%)] pointer-events-none" />
+      {/* 1. HERO SECTION */}
+      <section
+        id="hero"
+        className="relative min-h-[92vh] pt-28 pb-16 flex items-center overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: "url('/assets/techcart/hero_bg.png')",
+          backgroundColor: '#04060A',
+        }}
+      >
+        {/* Subtle dark overlay on left for typography contrast */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#04060A]/90 via-[#04060A]/60 to-transparent pointer-events-none z-0" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-          <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold font-mono">
-              <span>⚡ Quantum Hardware & Audio</span>
+        <div className="max-w-[1360px] mx-auto px-6 sm:px-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+          {/* Hero Left: Content */}
+          <div className="lg:col-span-6 space-y-6 text-left">
+            {/* Star Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] text-slate-300 font-medium tracking-wide">
+              <span className="text-slate-400 text-xs">✦</span>
+              <span>NEW 2026 HARDWARE COLLECTION</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1]">
-              Next-Gen <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Autonomous Computing</span> & Audio.
+
+            {/* Main Headline */}
+            <h1 className="font-heading font-extrabold text-5xl sm:text-6xl xl:text-[68px] leading-[1.0] tracking-tight uppercase text-white">
+              PRECISION AUDIO <br />
+              & <span className="text-[#2563EB]">NEXT-GEN</span> <br />
+              WEARABLES
             </h1>
-            <p className="text-sm sm:text-base text-slate-400 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              Wireless noise-cancelling headphones, Bluetooth calling smartwatches, and tactile mechanical keyboards — ready for 1-click autonomous purchasing.
+
+            {/* Subtitle */}
+            <p className="text-xs sm:text-[13px] text-slate-300 font-normal max-w-md leading-relaxed">
+              High-fidelity audio, studio-grade ANC, AMOLED displays and powerful computing gear, engineered for the way you live.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap items-center gap-3.5 pt-2">
               <Link
                 href="/products"
-                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold text-sm shadow-xl shadow-cyan-500/25 transition-all"
+                className="px-7 py-3 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-heading font-bold text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95"
               >
-                Browse Hardware Drops →
+                SHOP COLLECTION
               </Link>
               <a
-                href="http://localhost:3000"
-                target="_blank"
-                rel="noreferrer"
-                className="px-5 py-3 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-sm transition-all"
+                href="#categories"
+                className="px-7 py-3 rounded-lg border border-white/20 bg-white/[0.03] text-white font-heading font-bold text-xs uppercase tracking-wider hover:bg-white/10 hover:border-white transition-all"
               >
-                Launch CatalogX Buyer Agent 🤖
+                BROWSE CATEGORIES
               </a>
             </div>
 
-            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-slate-800/60 max-w-md mx-auto lg:mx-0 text-center lg:text-left">
-              <div>
-                <div className="text-2xl font-black text-white">15+</div>
-                <div className="text-[11px] text-slate-500 font-medium">Gadget Models</div>
+            {/* 3 Hardware Badges */}
+            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10 max-w-lg">
+              <div className="flex items-start gap-2.5">
+                <i className="fa-solid fa-shield-halved text-slate-400 text-sm mt-0.5"></i>
+                <div>
+                  <div className="text-xs font-bold text-white leading-tight">Ultra-Low Latency</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Bluetooth 5.4 High-Res</div>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-black text-cyan-400">100%</div>
-                <div className="text-[11px] text-slate-500 font-medium">Agent Transactable</div>
+              <div className="flex items-start gap-2.5">
+                <i className="fa-solid fa-headphones text-slate-400 text-sm mt-0.5"></i>
+                <div>
+                  <div className="text-xs font-bold text-white leading-tight">Studio ANC</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Dual Noise Sensor V1</div>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-black text-white">₹1.5k</div>
-                <div className="text-[11px] text-slate-500 font-medium">Auto-Spend Cap</div>
+              <div className="flex items-start gap-2.5">
+                <i className="fa-solid fa-bolt text-slate-400 text-sm mt-0.5"></i>
+                <div>
+                  <div className="text-xs font-bold text-white leading-tight">Instant Buy</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">Razorpay 1-Click</div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Hero Visual Card */}
+          {/* Hero Right: Product Visual */}
           <div className="lg:col-span-6 relative flex items-center justify-center">
-            <div className="absolute w-72 h-72 rounded-full bg-cyan-500/20 blur-3xl animate-cyber-glow pointer-events-none" />
-            <div className="relative bg-gradient-to-b from-slate-900/60 to-[#0B132B]/80 p-8 rounded-3xl border border-cyan-500/30 backdrop-blur-md shadow-2xl max-w-md w-full">
-              <div className="relative h-64 flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/assets/techcart/headphones.jpg"
-                  alt="boAt Rockerz 450 Pro"
-                  className="max-h-60 w-auto object-contain rounded-2xl drop-shadow-[0_20px_30px_rgba(0,0,0,0.8)]"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-cyan-400 uppercase font-mono">Featured Audio</div>
-                  <div className="text-base font-bold text-white">boAt Rockerz 450 Pro</div>
-                  <div className="text-xs text-slate-400">70h Playback · Extra Bass</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-black text-white">₹1,499</div>
-                  <button
-                    onClick={() => handleQuickBuy(ELECTRONICS_PRODUCTS[0])}
-                    className="mt-1 px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold text-xs shadow-md transition-all cursor-pointer"
-                  >
-                    Buy Now
-                  </button>
-                </div>
-              </div>
+            <div className="ambient-glow" />
+            <div className="relative z-10 w-full max-w-[520px] flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/techcart/hero.png"
+                alt="TechCart Headphones Hero"
+                className="w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] hover:scale-105 transition-transform duration-500"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Trending Hardware Drops */}
-      <section className="py-16 bg-[#06080F] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl font-black text-white tracking-tight">Trending Hardware Drops</h2>
-            <p className="text-xs text-slate-400 mt-1">Autonomous 1-click purchases enabled with Razorpay TokenHQ</p>
-          </div>
-          <Link href="/products" className="text-xs font-bold text-cyan-400 hover:text-cyan-300">
-            View All Hardware →
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featured.map((p) => (
-            <div
-              key={p.id}
-              className="group bg-[#0A1020] border border-cyan-950/80 rounded-2xl p-5 hover:border-cyan-500/50 transition-all flex flex-col justify-between"
+      {/* 2. EXPLORE CATEGORIES (WITH GENEROUS BOTTOM PADDING) */}
+      <section id="categories" className="pt-24 pb-44 bg-[#04060A] border-t border-white/5 relative z-20">
+        <div className="max-w-[1360px] mx-auto px-6 sm:px-10">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-16 gap-4">
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-mono font-bold text-[#2563EB] uppercase tracking-widest">
+                HARDWARE CATEGORIES
+              </div>
+              <h2 className="font-heading font-extrabold text-4xl sm:text-5xl text-white uppercase tracking-tight">
+                Explore Categories
+              </h2>
+            </div>
+            <Link
+              href="/products"
+              className="text-xs font-bold text-slate-300 hover:text-white uppercase tracking-wider flex items-center gap-1.5"
             >
-              <div>
-                <div className="h-44 flex items-center justify-center relative p-4 bg-slate-900/40 rounded-xl mb-4 group-hover:scale-105 transition-transform overflow-hidden">
+              <span>View All Electronics</span>
+              <span>→</span>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 pb-12">
+            {[
+              {
+                code: '01 // SOUND',
+                title: 'WIRELESS AUDIO & ANC',
+                category: 'audio',
+                image: '/assets/techcart/headphones.jpg',
+                desc: 'Over-ear studio monitors and active noise cancelling earbuds.',
+                price: 'FROM ₹1,499',
+              },
+              {
+                code: '02 // WIRELESS',
+                title: 'TRUE WIRELESS EARBUDS',
+                category: 'audio',
+                image: '/assets/techcart/earbuds.jpg',
+                desc: 'Dynamic bass drivers, IP55 sweatproof, dual mic clarity.',
+                price: 'FROM ₹2,199',
+              },
+              {
+                code: '03 // TELEMETRY',
+                title: 'SMARTWATCHES & AMOLED',
+                category: 'wearables',
+                image: '/assets/techcart/smartwatch.jpg',
+                desc: 'Bluetooth calling, SpO2 fitness tracking, rotating bezels.',
+                price: 'FROM ₹1,399',
+              },
+              {
+                code: '04 // HARDWARE',
+                title: 'MECHANICAL KEYBOARDS',
+                category: 'computing',
+                image: '/assets/techcart/keyboard.jpg',
+                desc: 'RGB tactile mechanical switches and multi-device combos.',
+                price: 'FROM ₹1,299',
+              },
+            ].map((col, idx) => (
+              <Link
+                key={idx}
+                href="/products"
+                className="group flex flex-col justify-between cursor-pointer space-y-4 pb-6"
+              >
+                <div className="relative aspect-square flex items-center justify-center p-6 rounded-3xl bg-gradient-to-b from-white/[0.04] to-transparent group-hover:from-white/[0.08] transition-colors border border-white/5 group-hover:border-white/15 overflow-hidden shadow-lg">
+                  <div className="ambient-glow"></div>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={p.image || '/assets/techcart/headphones.jpg'}
-                    alt={p.name}
-                    className="max-h-36 w-auto object-contain rounded-xl"
+                    src={col.image}
+                    alt={col.title}
+                    className="w-48 h-48 object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.8)] rounded-2xl relative z-10 group-hover:scale-105 transition-transform duration-500"
                   />
-                  {p.stock <= 0 && (
-                    <span className="absolute top-2 right-2 px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-bold">
-                      Sold Out
+                </div>
+
+                <div className="space-y-1.5 pt-2">
+                  <div className="text-[10px] font-mono text-[#2563EB] font-bold uppercase tracking-wider">
+                    {col.price}
+                  </div>
+                  <h3 className="font-heading font-bold text-lg text-white uppercase tracking-wide group-hover:text-[#2563EB] transition-colors">
+                    {col.title}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-normal line-clamp-2 leading-relaxed">
+                    {col.desc}
+                  </p>
+                  <div className="pt-2">
+                    <span className="text-[11px] font-bold text-slate-300 group-hover:text-white uppercase tracking-wider flex items-center gap-1.5 transition-colors">
+                      <span>EXPLORE MODELS</span>
+                      <span>→</span>
                     </span>
-                  )}
+                  </div>
                 </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
-                <div className="text-[10px] text-cyan-400 uppercase font-mono font-semibold">{p.brand}</div>
-                <h3 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
-                  {p.name}
-                </h3>
-                <p className="text-xs text-slate-400 line-clamp-2 mt-1 leading-relaxed">
-                  {p.description}
-                </p>
+      {/* 3. TRENDING HARDWARE DROPS */}
+      <section className="py-24 bg-[#080C14] border-t border-white/5 relative z-20">
+        <div className="max-w-[1360px] mx-auto px-6 sm:px-10">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+            <div>
+              <div className="text-xs font-mono font-bold text-[#2563EB] uppercase tracking-widest mb-1">
+                FEATURED HARDWARE
               </div>
-
-              <div className="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-black text-white">₹{(p.price_paise / 100).toLocaleString('en-IN')}</div>
-                  <div className="text-[10px] text-slate-500">{p.stock} in stock</div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Link
-                    href={`/product/${p.id}`}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
-                  >
-                    View
-                  </Link>
-                  <button
-                    onClick={() => handleQuickBuy(p)}
-                    disabled={p.stock <= 0}
-                    className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold disabled:opacity-40 cursor-pointer"
-                  >
-                    Buy
-                  </button>
-                </div>
-              </div>
+              <h2 className="font-heading font-bold text-3xl sm:text-4xl text-white uppercase tracking-tight">
+                Trending Electronics Drops
+              </h2>
             </div>
-          ))}
+            <Link
+              href="/products"
+              className="text-xs font-bold text-slate-300 hover:text-white uppercase tracking-wider"
+            >
+              Browse All 9 Models →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featured.map((p) => (
+              <div
+                key={p.id}
+                className="tech-card p-6 flex flex-col justify-between group"
+              >
+                <div>
+                  <Link href={`/product/${p.id}`} className="block">
+                    <div className="h-48 flex items-center justify-center relative p-4 bg-black/40 rounded-2xl mb-5 overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.image || '/assets/techcart/headphones.jpg'}
+                        alt={p.name}
+                        className="max-h-40 w-auto object-contain rounded-xl drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)] group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {p.stock <= 0 && (
+                        <span className="absolute top-3 right-3 px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-bold uppercase font-mono">
+                          Out of Stock
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+
+                  <div className="flex items-center justify-between text-[11px] text-[#2563EB] uppercase font-mono font-semibold">
+                    <span>{p.brand}</span>
+                    <span className="text-slate-400 font-sans">★ {p.rating || '4.8'}</span>
+                  </div>
+
+                  <Link href={`/product/${p.id}`}>
+                    <h3 className="font-heading font-bold text-lg text-white uppercase tracking-wide mt-1 group-hover:text-[#2563EB] transition-colors line-clamp-1">
+                      {p.name}
+                    </h3>
+                  </Link>
+
+                  <p className="text-xs text-slate-400 line-clamp-2 mt-1.5 leading-relaxed font-normal">
+                    {p.description}
+                  </p>
+                </div>
+
+                <div className="pt-5 mt-5 border-t border-white/10 flex items-center justify-between">
+                  <div>
+                    <div className="font-heading font-bold text-lg text-white">
+                      ₹{(p.price_paise / 100).toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-mono">{p.stock} in stock</div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/product/${p.id}`}
+                      className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all"
+                    >
+                      View
+                    </Link>
+                    <button
+                      onClick={() => handleQuickBuy(p)}
+                      disabled={p.stock <= 0}
+                      className="px-4 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-40 cursor-pointer"
+                    >
+                      Buy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       <Footer />
+
+      <TechCartCartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cart={cart}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onClearCart={handleClearCart}
+      />
 
       <CheckoutModal
         isOpen={isModalOpen}

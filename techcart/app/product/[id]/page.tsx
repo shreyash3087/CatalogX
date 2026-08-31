@@ -1,94 +1,225 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import CheckoutModal from '@/components/CheckoutModal';
-import { ELECTRONICS_PRODUCTS } from '@/lib/products';
+import TechCartCartDrawer, { CartItem } from '@/components/CartDrawer';
+import { ELECTRONICS_PRODUCTS, Product } from '@/lib/products';
 
-export default function TechCartDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function TechCartDynamicProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const product = ELECTRONICS_PRODUCTS.find((p) => p.id === id) || ELECTRONICS_PRODUCTS[0];
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [addedAnimation, setAddedAnimation] = useState(false);
+
+  useEffect(() => {
+    const found = ELECTRONICS_PRODUCTS.find((p) => p.id === id) || ELECTRONICS_PRODUCTS[0];
+    setProduct(found);
+  }, [id]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('techcart_cart');
+      if (stored) setCart(JSON.parse(stored));
+    } catch (e) {}
+  }, []);
+
+  const saveCart = (newCart: CartItem[]) => {
+    setCart(newCart);
+    try {
+      localStorage.setItem('techcart_cart', JSON.stringify(newCart));
+    } catch (e) {}
+  };
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    const existingIndex = cart.findIndex((item) => item.product.id === product.id);
+
+    let updatedCart: CartItem[];
+    if (existingIndex > -1) {
+      updatedCart = [...cart];
+      updatedCart[existingIndex].quantity += quantity;
+    } else {
+      updatedCart = [...cart, { product, quantity }];
+    }
+
+    saveCart(updatedCart);
+    setAddedAnimation(true);
+    setTimeout(() => setAddedAnimation(false), 1200);
+    setIsCartOpen(true);
+  };
+
+  const handleUpdateQuantity = (index: number, newQty: number) => {
+    if (newQty <= 0) {
+      handleRemoveItem(index);
+      return;
+    }
+    const updated = [...cart];
+    updated[index].quantity = newQty;
+    saveCart(updated);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    const updated = cart.filter((_, i) => i !== index);
+    saveCart(updated);
+  };
+
+  const handleClearCart = () => {
+    saveCart([]);
+  };
+
+  if (!product) return null;
+
+  const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#06080F]">
-      <Navbar />
+    <div className="flex flex-col min-h-screen bg-[#04060A] text-slate-100 font-sans selection:bg-[#2563EB] selection:text-white">
+      <Navbar cartCount={totalCartCount} onOpenCart={() => setIsCartOpen(true)} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
+      <main className="flex-1 max-w-[1360px] w-full mx-auto px-6 sm:px-10 pt-28 pb-24">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-slate-500 mb-8">
-          <Link href="/" className="hover:text-cyan-400">Home</Link>
-          <span>/</span>
-          <Link href="/products" className="hover:text-cyan-400">Electronics</Link>
-          <span>/</span>
-          <span className="text-slate-300 font-medium">{product.name}</span>
+        <div className="mb-8 flex items-center gap-2 text-xs font-medium text-slate-400">
+          <Link href="/" className="hover:text-white transition-colors">Home</Link>
+          <span className="text-slate-600">/</span>
+          <Link href="/products" className="hover:text-white transition-colors">Electronics</Link>
+          <span className="text-slate-600">/</span>
+          <span className="text-white font-semibold truncate">{product.name}</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* Left: Product Image */}
-          <div className="lg:col-span-7 bg-[#0A1020] border border-cyan-950/80 rounded-3xl p-10 flex items-center justify-center relative min-h-[420px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={product.image || '/assets/techcart/headphones.jpg'}
-              alt={product.name}
-              className="max-h-80 w-auto object-contain rounded-2xl drop-shadow-[0_25px_35px_rgba(0,0,0,0.8)] hover:scale-105 transition-transform duration-300"
-            />
-            {product.stock <= 0 && (
-              <span className="absolute top-6 right-6 px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold">
-                Out of Stock
-              </span>
-            )}
+        {/* Product Details Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+          {/* Left: Product Image & Badges */}
+          <div className="lg:col-span-6 space-y-5">
+            <div className="relative rounded-3xl bg-[#090E1A] border border-white/10 overflow-hidden p-10 sm:p-14 flex items-center justify-center min-h-[420px] md:min-h-[500px] shadow-2xl group">
+              <div className="ambient-glow" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={product.image || '/assets/techcart/headphones.jpg'}
+                alt={product.name}
+                className="max-h-[340px] md:max-h-[400px] w-auto object-contain rounded-2xl transition-transform duration-500 group-hover:scale-105 drop-shadow-[0_25px_45px_rgba(0,0,0,0.9)] relative z-10"
+              />
+
+              {/* Clean Stock Status Badge */}
+              <div className="absolute top-5 left-5 px-3.5 py-1.5 rounded-full text-xs font-medium bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 flex items-center gap-2 backdrop-blur-md z-20">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>{product.stock > 0 ? 'In Stock' : 'Out of Stock'}</span>
+              </div>
+
+              {/* Brand Pill */}
+              <div className="absolute top-5 right-5 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold tracking-wider bg-blue-950/80 text-blue-300 border border-blue-700/50 uppercase backdrop-blur-md z-20">
+                {product.brand}
+              </div>
+            </div>
+
+            {/* 3 Hardware Badges */}
+            <div className="grid grid-cols-3 gap-3.5">
+              <div className="p-4 rounded-2xl bg-[#090E1A] border border-white/10 text-center space-y-1">
+                <i className="fa-solid fa-shield-check text-blue-400 text-base"></i>
+                <div className="text-xs font-bold text-white">Genuine Spec</div>
+                <div className="text-[10px] text-slate-400">Direct from OEM</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#090E1A] border border-white/10 text-center space-y-1">
+                <i className="fa-solid fa-truck-fast text-blue-400 text-base"></i>
+                <div className="text-xs font-bold text-white">Express Air</div>
+                <div className="text-[10px] text-slate-400">2-Day Delivery</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-[#090E1A] border border-white/10 text-center space-y-1">
+                <i className="fa-solid fa-rotate-left text-blue-400 text-base"></i>
+                <div className="text-xs font-bold text-white">1-Year Warranty</div>
+                <div className="text-[10px] text-slate-400">Brand Guarantee</div>
+              </div>
+            </div>
           </div>
 
-          {/* Right: Product Details & Purchase Form */}
-          <div className="lg:col-span-5 space-y-6">
+          {/* Right: Product Information & Purchase Actions */}
+          <div className="lg:col-span-6 space-y-6">
             <div>
-              <div className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
-                {product.brand} · {product.category}
-              </div>
-              <h1 className="text-3xl font-black text-white tracking-tight mt-1">{product.name}</h1>
-              <div className="flex items-center gap-3 mt-2">
-                <span className="text-2xl font-black text-white">₹{(product.price_paise / 100).toLocaleString('en-IN')}</span>
-                <span className="text-xs text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                  {product.stock > 0 ? `In Stock (${product.stock} units)` : 'Sold Out'}
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#2563EB]">
+                  {product.brand} · {product.category}
+                </span>
+                <span className="text-xs text-amber-400 font-semibold flex items-center gap-1">
+                  <i className="fa-solid fa-star text-[10px]"></i>
+                  <span>{product.rating || '4.8'} (94 ratings)</span>
                 </span>
               </div>
+
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-extrabold text-white tracking-tight uppercase mt-1 leading-none">
+                {product.name}
+              </h1>
+
+              {/* Price Row */}
+              <div className="flex items-baseline gap-3.5 mt-4">
+                <span className="text-3xl sm:text-4xl font-bold font-mono text-white">
+                  ₹{(product.price_paise / 100).toLocaleString('en-IN')}
+                </span>
+                <span className="text-base font-mono text-slate-500 line-through">
+                  ₹{((product.price_paise * 1.4) / 100).toLocaleString('en-IN')}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-md text-xs font-bold font-mono bg-emerald-950 text-emerald-400 border border-emerald-800/60">
+                  28% OFF
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5">Inclusive of GST. Free priority shipping available.</p>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed font-normal">
-              {product.description}
-            </p>
+            {/* Overview / Description */}
+            <div className="space-y-2 border-t border-b border-white/10 py-5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono">Overview</h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-slate-300 font-normal">
+                {product.description}
+              </p>
+            </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-2 text-xs">
-              <div className="text-white font-bold">Hardware Specifications:</div>
+            {/* Specifications Sheet */}
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2.5 text-xs">
+              <div className="font-bold text-white uppercase font-mono tracking-wider text-[11px]">
+                Hardware Specifications
+              </div>
               <div className="grid grid-cols-2 gap-2 text-slate-400 text-[11px]">
-                <div>Brand: <span className="text-slate-200">{product.brand}</span></div>
-                <div>Category: <span className="text-slate-200">{product.category}</span></div>
-                <div>Tags: <span className="text-slate-200">{product.tags.join(', ')}</span></div>
-                <div>Protocol: <span className="text-cyan-400 font-mono font-bold">TokenHQ Agent</span></div>
+                <div>Manufacturer: <span className="text-slate-200 font-semibold">{product.brand}</span></div>
+                <div>Category: <span className="text-slate-200 font-semibold capitalize">{product.category}</span></div>
+                <div>Highlights: <span className="text-slate-200">{product.tags.join(', ')}</span></div>
+                <div>Condition: <span className="text-emerald-400 font-bold">Brand New OEM</span></div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-3 pt-2">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                disabled={product.stock <= 0}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-black text-sm shadow-xl shadow-cyan-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
-              >
-                <span>⚡ Buy Now with Razorpay</span>
-              </button>
-
-              <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800 space-y-1 text-xs text-slate-400">
-                <div className="text-white font-bold flex items-center gap-1.5">
-                  <span>🤖 CatalogX Agentic Enabled</span>
+            {/* Quantity Selector */}
+            <div className="space-y-2 pt-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-white font-mono block">Quantity</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center border border-white/15 rounded-xl bg-[#090E1A] overflow-hidden">
+                  <button
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer font-bold"
+                  >
+                    -
+                  </button>
+                  <span className="w-10 text-center font-mono font-bold text-sm text-white">{quantity}</span>
+                  <button
+                    onClick={() => setQuantity((q) => q + 1)}
+                    className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/5 transition-colors cursor-pointer font-bold"
+                  >
+                    +
+                  </button>
                 </div>
-                <p className="text-[11px] leading-relaxed">
-                  Autonomous AI buyer agents can purchase this item headless via Razorpay TokenHQ e-mandates.
-                </p>
+                <span className="text-xs text-slate-400">Unit(s)</span>
               </div>
+            </div>
+
+            {/* Prominent Single ADD TO CART Button */}
+            <div className="pt-3">
+              <button
+                onClick={handleAddToCart}
+                disabled={product.stock <= 0}
+                className="w-full py-4 px-8 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] active:scale-[0.99] text-white font-heading font-bold text-base uppercase tracking-wider shadow-[0_0_25px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-40"
+              >
+                <i className="fa-solid fa-bag-shopping text-base"></i>
+                <span>{addedAnimation ? 'ADDED TO CART! ✓' : `ADD TO CART — ₹${((product.price_paise * quantity) / 100).toLocaleString('en-IN')}`}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -96,10 +227,14 @@ export default function TechCartDetailPage({ params }: { params: Promise<{ id: s
 
       <Footer />
 
-      <CheckoutModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        product={product}
+      {/* Slide-Over Hardware Cart Drawer */}
+      <TechCartCartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cart={cart}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onClearCart={handleClearCart}
       />
     </div>
   );

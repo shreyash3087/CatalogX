@@ -1,30 +1,92 @@
 @import "tailwindcss";
 
-:root {
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', sans-serif;
+    --font-heading: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #04060A;
+    color: #f1f5f9;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
 }
 
-body {
-  font-family: var(--font-sans);
-  background-color: #06080F;
-  color: #f1f5f9;
-  overflow-x: hidden;
+/* Crisp Text Selection */
+::selection {
+  background-color: #2563EB;
+  color: #FFFFFF;
+}
+::-moz-selection {
+  background-color: #2563EB;
+  color: #FFFFFF;
 }
 
-@keyframes cyberGlow {
-  0%, 100% { opacity: 0.3; filter: blur(25px); }
-  50% { opacity: 0.7; filter: blur(35px); }
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #04060A;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E2538;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2563EB;
 }
 
-.animate-cyber-glow {
-  animation: cyberGlow 5s ease-in-out infinite;
+/* Pure Translucent Blur Navbar */
+.nav-pure-blur {
+  background: rgba(4, 6, 10, 0.85) !important;
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Hide scrollbar */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* Frameless Editorial Elements */
+.frameless-item {
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.frameless-item:hover .img-reveal {
+  transform: scale(1.06) translateY(-4px);
+}
+.img-reveal {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Ambient Soft Glow */
+.ambient-glow {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  border-radius: 9999px;
+}
+
+/* Tech Hardware Card */
+.tech-card {
+  background: #090E1A;
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  border-radius: 1.25rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.tech-card:hover {
+  border-color: rgba(37, 99, 235, 0.5);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.25);
 }

@@ -5,42 +5,60 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="bg-[#030509] border-t border-slate-900 text-slate-400 text-xs mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+    <footer className="bg-[#020306] border-t border-white/5 text-slate-400 text-xs mt-auto relative z-20">
+      <div className="max-w-[1360px] mx-auto px-6 sm:px-10 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           {/* Brand Col */}
-          <div className="space-y-3 md:col-span-2">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-cyan-500 flex items-center justify-center text-black font-extrabold text-sm">
-                ⚡
+          <div className="lg:col-span-2 space-y-4">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/assets/techcart/logo.png"
+                  alt="TechCart Logo"
+                  className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(37,99,235,0.6)]"
+                />
               </div>
-              <span className="text-sm font-bold text-white tracking-tight">TechCart Electronics</span>
-            </div>
-            <p className="text-slate-400 text-xs max-w-sm leading-relaxed">
-              Premium wireless audio, Bluetooth calling smartwatches, and mechanical gaming gear. Fully enabled for the CatalogX Agentic Commerce Protocol and Razorpay TokenHQ e-mandates.
+              <div className="font-heading font-bold text-xl text-white tracking-tight leading-none">
+                TechCart
+              </div>
+            </Link>
+            <p className="text-slate-400 text-xs max-w-sm leading-relaxed font-normal">
+              High-fidelity audio, studio-grade ANC, AMOLED displays and powerful computing gear. Engineered for the modern digital lifestyle with instant Razorpay checkout.
             </p>
             <div className="text-[11px] text-slate-500 font-mono">
-              Manifest: <a href="/.well-known/agent-catalog" className="text-cyan-400 hover:underline">/.well-known/agent-catalog</a>
+              Agent Discovery: <a href="/.well-known/agent-catalog" className="text-blue-400 hover:underline">/.well-known/agent-catalog</a>
             </div>
           </div>
 
           {/* Quick links */}
-          <div className="space-y-2">
-            <div className="text-white font-bold uppercase tracking-wider text-[11px]">Hardware Drops</div>
-            <ul className="space-y-1.5 text-[11px]">
-              <li><Link href="/products" className="hover:text-cyan-400 transition-colors">Wireless Audio & Headphones</Link></li>
-              <li><Link href="/products" className="hover:text-cyan-400 transition-colors">Fitness Smartwatches</Link></li>
-              <li><Link href="/products" className="hover:text-cyan-400 transition-colors">Mechanical Keyboards</Link></li>
-              <li><Link href="/products" className="hover:text-cyan-400 transition-colors">All Electronics Catalog</Link></li>
+          <div className="space-y-3">
+            <div className="font-heading font-bold text-white uppercase tracking-wider text-sm">Hardware</div>
+            <ul className="space-y-2 text-xs">
+              <li><Link href="/products" className="hover:text-white transition-colors">Wireless Audio & ANC</Link></li>
+              <li><Link href="/products" className="hover:text-white transition-colors">Bluetooth Smartwatches</Link></li>
+              <li><Link href="/products" className="hover:text-white transition-colors">Mechanical Keyboards</Link></li>
+              <li><Link href="/products" className="hover:text-white transition-colors">All Electronics Catalog</Link></li>
+            </ul>
+          </div>
+
+          {/* Brands */}
+          <div className="space-y-3">
+            <div className="font-heading font-bold text-white uppercase tracking-wider text-sm">Top Brands</div>
+            <ul className="space-y-2 text-xs">
+              <li><Link href="/products" className="hover:text-white transition-colors">Sony High-Resolution</Link></li>
+              <li><Link href="/products" className="hover:text-white transition-colors">boAt Rockerz Audio</Link></li>
+              <li><Link href="/products" className="hover:text-white transition-colors">Samsung Galaxy Gear</Link></li>
+              <li><Link href="/products" className="hover:text-white transition-colors">Logitech Computing</Link></li>
             </ul>
           </div>
 
           {/* Integration & Admin Portal */}
-          <div className="space-y-2">
-            <div className="text-white font-bold uppercase tracking-wider text-[11px]">Agent & Staff</div>
-            <ul className="space-y-1.5 text-[11px]">
+          <div className="space-y-3">
+            <div className="font-heading font-bold text-white uppercase tracking-wider text-sm">Protocol & Staff</div>
+            <ul className="space-y-2 text-xs">
               <li>
-                <a href="http://localhost:3000" target="_blank" rel="noreferrer" className="text-cyan-400 hover:underline">
+                <a href="http://localhost:3000" target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">
                   CatalogX AI Buyer Agent ↗
                 </a>
               </li>
@@ -53,7 +71,7 @@ export default function Footer() {
                 {/* Subtle Merchant Admin Login Link */}
                 <Link
                   href="/admin"
-                  className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-cyan-400 font-semibold border-b border-dashed border-slate-700 hover:border-cyan-400 pb-0.5 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white font-semibold border-b border-dashed border-slate-700 hover:border-white pb-0.5 transition-colors"
                 >
                   <span>Merchant Admin Portal</span>
                   <span>🔒</span>
@@ -64,9 +82,9 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-6 border-t border-slate-900/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-slate-500">
-          <div>© {new Date().getFullYear()} TechCart Electronics. All rights reserved.</div>
-          <div className="flex items-center gap-4">
+        <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div>© {new Date().getFullYear()} TechCart Electronics Inc. All rights reserved.</div>
+          <div className="flex items-center gap-6">
             <Link href="/admin" className="hover:text-slate-300 transition-colors">Staff Login</Link>
             <span>·</span>
             <span>Powered by Razorpay Agentic Commerce</span>
