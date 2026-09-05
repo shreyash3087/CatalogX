@@ -79,7 +79,7 @@ export function useAgentFeed(wsUrl: string = '/api/events') {
   const fetchHttpEvents = useCallback(async () => {
     try {
       const endpoint = wsUrl.startsWith('/') ? wsUrl : '/api/events';
-      const res = await fetch(endpoint);
+      const res = await fetch(endpoint, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.events)) {
@@ -139,9 +139,9 @@ export function useAgentFeed(wsUrl: string = '/api/events') {
         pollTimerRef.current = setInterval(fetchHttpEvents, 1000);
       }
     } else {
-      // Direct HTTP event polling on mount / session change with relaxed background interval
+      // Direct HTTP event polling on mount / session change with responsive 1.2s interval
       fetchHttpEvents();
-      pollTimerRef.current = setInterval(fetchHttpEvents, 10000);
+      pollTimerRef.current = setInterval(fetchHttpEvents, 1200);
     }
 
     return () => {

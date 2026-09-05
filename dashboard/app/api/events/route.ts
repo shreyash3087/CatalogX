@@ -7,7 +7,6 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get('sessionId');
-    const userId = searchParams.get('userId') || 'user_shreyash_001';
 
     if (!sessionId) {
       return NextResponse.json({ events: [] });
@@ -17,19 +16,18 @@ export async function GET(req: NextRequest) {
     try {
       const db = await getCatalogXDb();
       if (db) {
-        const sessionDoc = await db.collection('chat_sessions').findOne({
-          sessionId,
-          ...(userId ? { userId } : {}),
-        });
+        const sessionDoc = await db.collection('chat_sessions').findOne({ sessionId });
 
-        if (sessionDoc && Array.isArray(sessionDoc.events) && sessionDoc.events.length > 0) {
+        if (sessionDoc && Array.isArray(sessionDoc.events)) {
           return NextResponse.json({ events: sessionDoc.events });
         }
       }
-    } catch {}
+    } catch (dbErr: any) {
+      console.warn('[API /events] DB read notice:', dbErr.message);
+    }
 
     // 2. Check local fallback log file
-    const rootDir = path.resolve(process.cwd(), '..');
+    const rootDir = process.cwd().includes('dashboard') ? path.resolve(process.cwd(), '..') : process.cwd();
     const logFile = path.join(rootDir, 'buyer-agent', 'logs', `${sessionId}.json`);
     if (fs.existsSync(logFile)) {
       try {
