@@ -1,6 +1,4 @@
 import { NextRequest } from 'next/server';
-import { spawn } from 'child_process';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -16,52 +14,47 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const rootDir = process.cwd().includes('dashboard')
-      ? path.resolve(process.cwd(), '..')
-      : process.cwd();
-    const agentCwd = path.resolve(rootDir, 'buyer-agent');
-    const agentScript = path.resolve(agentCwd, 'src', 'index.js');
-
-    console.log(`[Dashboard API] Streaming Agent run for session ${sessionId || 'new'}: "${instruction}"`);
-
-    const envVars: NodeJS.ProcessEnv = {
-      ...process.env,
-      AGENT_SESSION_ID: sessionId || '',
-      FORCE_COLOR: '0',
-    };
-
     if (userProfile) {
-      envVars.CATALOGX_USER_PROFILE = JSON.stringify(userProfile);
+      process.env.CATALOGX_USER_PROFILE = JSON.stringify(userProfile);
     }
 
-    const child = spawn('node', [agentScript, instruction], {
-      cwd: agentCwd,
-      env: envVars,
-    });
+    console.log(`[Dashboard API] Direct Agent execution for session ${sessionId || 'new'}: "${instruction}"`);
 
     const stream = new ReadableStream({
-      start(controller) {
+      async start(controller) {
         const encoder = new TextEncoder();
 
-        child.stdout.on('data', (data) => {
-          const text = data.toString();
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'stdout', text })}\n\n`));
-        });
+        const originalLog = console.log;
+        const originalError = console.error;
 
-        child.stderr.on('data', (data) => {
-          const text = data.toString();
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'stderr', text })}\n\n`));
-        });
+        try {
+          console.log = (...args: any[]) => {
+            const text = args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'stdout', text })}\n\n`));
+            originalLog(...args);
+          };
 
-        child.on('close', (code) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done', code })}\n\n`));
+          console.error = (...args: any[]) => {
+            const text = args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'stderr', text })}\n\n`));
+            originalError(...args);
+          };
+
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { BuyerAgent } = require('@/lib/agent/core');
+          const agent = new BuyerAgent(sessionId, userProfile?.email || 'user_shreyash_001');
+
+          await agent.run(instruction);
+
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done', code: 0 })}\n\n`));
+        } catch (execErr: any) {
+          originalError('[Agent Execution Error]:', execErr);
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', error: execErr.message })}\n\n`));
+        } finally {
+          console.log = originalLog;
+          console.error = originalError;
           controller.close();
-        });
-
-        child.on('error', (err) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', error: err.message })}\n\n`));
-          controller.close();
-        });
+        }
       },
     });
 

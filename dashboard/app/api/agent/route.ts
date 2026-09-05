@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import path from 'path';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,36 +11,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Instruction string is required' }, { status: 400 });
     }
 
-    const rootDir = path.resolve(process.cwd(), '..');
-    const agentCwd = path.join(rootDir, 'buyer-agent');
-    const agentScript = path.join(agentCwd, 'src', 'index.js');
-
-    console.log(`[Dashboard API] Spawning Agent for session ${sessionId || 'new'}: "${instruction}"`);
-
-    const safeInstruction = instruction.replace(/"/g, '\\"');
-    const cmd = `node "${agentScript}" "${safeInstruction}"`;
-
-    const envVars: NodeJS.ProcessEnv = {
-      ...process.env,
-      AGENT_SESSION_ID: sessionId || '',
-    };
-
     if (userProfile) {
-      envVars.CATALOGX_USER_PROFILE = JSON.stringify(userProfile);
+      process.env.CATALOGX_USER_PROFILE = JSON.stringify(userProfile);
     }
 
-    exec(
-      cmd,
-      {
-        cwd: agentCwd,
-        env: envVars,
-      },
-      (error: Error | null) => {
-        if (error) {
-          console.error('[Dashboard API] Agent process error:', error);
-        }
-      }
-    );
+    console.log(`[Dashboard API] In-process Agent execution for session ${sessionId || 'new'}: "${instruction}"`);
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { BuyerAgent } = require('@/lib/agent/core');
+    const agent = new BuyerAgent(sessionId, userProfile?.email || 'user_shreyash_001');
+
+    // Run agent in background / non-blocking
+    agent.run(instruction).catch((err: any) => {
+      console.error('[Dashboard API Agent run error]:', err);
+    });
 
     return NextResponse.json({
       success: true,
