@@ -24,10 +24,12 @@ const { AuditLogger } = require('../audit/logger');
 const { printReport } = require('../audit/reporter');
 const { loadSession, appendMessage, updateSessionProductState } = require('../db/sessionStore');
 
-const MERCHANTS = [
-  'http://localhost:3001', // UrbanStride (Footwear)
-  'http://localhost:3002', // TechCart (Electronics)
-];
+const MERCHANTS = process.env.MERCHANT_URLS
+  ? process.env.MERCHANT_URLS.split(',').map((u) => u.trim())
+  : [
+      process.env.URBANSTRIDE_URL || process.env.NEXT_PUBLIC_URBANSTRIDE_URL || 'http://localhost:3001',
+      process.env.TECHCART_URL || process.env.NEXT_PUBLIC_TECHCART_URL || 'http://localhost:3002',
+    ];
 const MAX_RETRIES = parseInt(process.env.MAX_RETRIES) || 3;
 
 if (!global._CATALOGX_SESSION_MEMORY) {

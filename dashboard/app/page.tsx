@@ -94,7 +94,16 @@ function FormattedMarkdown({ content, isLight }: { content: string; isLight: boo
   );
 }
 
-function formatStorefrontUrl(pUrl: string | undefined, pId: string | undefined, merchUrl: string = 'http://localhost:3001') {
+const DEFAULT_URBANSTRIDE_URL =
+  process.env.NEXT_PUBLIC_URBANSTRIDE_URL || 'http://localhost:3001';
+const DEFAULT_TECHCART_URL =
+  process.env.NEXT_PUBLIC_TECHCART_URL || 'http://localhost:3002';
+
+function formatStorefrontUrl(
+  pUrl: string | undefined,
+  pId: string | undefined,
+  merchUrl: string = DEFAULT_URBANSTRIDE_URL
+) {
   if (pUrl && (pUrl.startsWith('http://') || pUrl.startsWith('https://'))) {
     return pUrl;
   }
@@ -212,7 +221,7 @@ function buildMessagesFromSessionEvents(
           ev.price?.display ||
           '';
         const img = out.image_url || out.product?.image_url || ev.image_url || '';
-        const merchUrl = out.merchant_url || (name.toLowerCase().includes('shoe') || name.toLowerCase().includes('hrx') ? 'http://localhost:3001' : 'http://localhost:3002');
+        const merchUrl = out.merchant_url || (name.toLowerCase().includes('shoe') || name.toLowerCase().includes('hrx') ? DEFAULT_URBANSTRIDE_URL : DEFAULT_TECHCART_URL);
         const pId = out.selected_id || out.recommended_id || inp.product_id || ev.product_id || (name.toLowerCase().includes('hrx') ? 'urbanstride_hrx_run' : '');
         const pUrl = formatStorefrontUrl(out.product_url, pId, merchUrl);
         text = out.reply || ev.reasoning || `Recommended "${name}"${brand ? ` by ${brand}` : ''}${price ? ` — ${price}` : ''} as the best match.`;
@@ -258,8 +267,8 @@ function buildMessagesFromSessionEvents(
         isTier1 = gateTier === 'AUTO' || (amountPaise > 0 && amountPaise <= 150000);
         const name = out.product_name || inp.product_name || ev.product_name || '';
         const brand = out.brand || '';
-        const img = out.image_url || inp.image_url || out.product?.image_url || (name.toLowerCase().includes('shoe') || name.toLowerCase().includes('hrx') ? 'http://localhost:3001/assets/urbanstride/shoe1.png' : '');
-        const merchUrl = out.merchant_url || (name.toLowerCase().includes('shoe') || name.toLowerCase().includes('hrx') ? 'http://localhost:3001' : 'http://localhost:3002');
+        const img = out.image_url || inp.image_url || out.product?.image_url || (name.toLowerCase().includes('shoe') || name.toLowerCase().includes('hrx') ? `${DEFAULT_URBANSTRIDE_URL}/assets/urbanstride/shoe1.png` : '');
+        const merchUrl = out.merchant_url || (name.toLowerCase().includes('shoe') || name.toLowerCase().includes('hrx') ? DEFAULT_URBANSTRIDE_URL : DEFAULT_TECHCART_URL);
         const pId = out.product_id || inp.product_id || ev.product_id || (name.toLowerCase().includes('hrx') ? 'urbanstride_hrx_run' : '');
         const pUrl = formatStorefrontUrl(out.product_url, pId, merchUrl);
         if (name) {
@@ -816,14 +825,14 @@ export default function Dashboard() {
     try {
       let res;
       try {
-        res = await fetch('http://localhost:3001/api/payments/simulate', {
+        res = await fetch(`${DEFAULT_URBANSTRIDE_URL}/api/payments/simulate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ razorpay_order_id: orderId, session_id: activeSessionId }),
         });
-        if (!res.ok && res.status === 404) throw new Error('Retry 3002');
+        if (!res.ok && res.status === 404) throw new Error('Retry TechCart');
       } catch {
-        res = await fetch('http://localhost:3002/api/payments/simulate', {
+        res = await fetch(`${DEFAULT_TECHCART_URL}/api/payments/simulate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ razorpay_order_id: orderId, session_id: activeSessionId }),
@@ -886,7 +895,7 @@ export default function Dashboard() {
   };
 
   // Standard 2FA OTP Razorpay Checkout
-  const handleRazorpay2FACheckout = async (targetOrderId?: string, amountDisplay?: string, merchantUrl: string = 'http://localhost:3001') => {
+  const handleRazorpay2FACheckout = async (targetOrderId?: string, amountDisplay?: string, merchantUrl: string = DEFAULT_URBANSTRIDE_URL) => {
     let orderId = targetOrderId;
     if (!orderId) {
       const ev = [...activeSessionEvents].reverse().find((e) => e.type === 'ORDER_CREATED');
@@ -910,7 +919,7 @@ export default function Dashboard() {
       try {
         let res;
         try {
-          res = await fetch('http://localhost:3001/api/payments/simulate', {
+          res = await fetch(`${DEFAULT_URBANSTRIDE_URL}/api/payments/simulate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -920,9 +929,9 @@ export default function Dashboard() {
               action: '2fa_authorized',
             }),
           });
-          if (!res.ok && res.status === 404) throw new Error('Retry 3002');
+          if (!res.ok && res.status === 404) throw new Error('Retry TechCart');
         } catch {
-          res = await fetch('http://localhost:3002/api/payments/simulate', {
+          res = await fetch(`${DEFAULT_TECHCART_URL}/api/payments/simulate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
