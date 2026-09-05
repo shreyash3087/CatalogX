@@ -22,14 +22,16 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date(),
     };
 
-    await db.collection('chat_sessions').findOneAndUpdate(
-      { sessionId },
-      { $set: doc, $setOnInsert: { createdAt: new Date() } },
-      { upsert: true }
-    );
+    if (db) {
+      await db.collection('chat_sessions').findOneAndUpdate(
+        { sessionId },
+        { $set: doc, $setOnInsert: { createdAt: new Date() } },
+        { upsert: true }
+      );
+    }
 
     return NextResponse.json({ success: true, session: doc });
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    return NextResponse.json({ success: false, error: (err as Error).message }, { status: 200 });
   }
 }

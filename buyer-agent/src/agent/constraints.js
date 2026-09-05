@@ -1,75 +1,91 @@
 'use strict';
 
 /**
- * CatalogX — Intent & Constraint Engine
- * =====================================
- * Intelligent natural-language understanding that accurately classifies
- * user intents (shopping vs conversational/out-of-context), retains session
- * memory via previous_response_id (Responses API), asks minimum essential
- * clarification questions (e.g. shoe size), and extracts structured constraints.
+ * CatalogX — Domain-Agnostic Intent & Constraint Engine
+ * ========================================================
+ * Universal Natural Language Understanding for Open Agentic Commerce (UAP/ACP).
+ * Handles shopping requests, conversational queries, and explicit order confirmations / modifications.
  */
 
+require('dotenv').config({ path: require('path').resolve(__dirname, '../../../.env') });
 require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env') });
 
 const { chatJSON } = require('../../../llm/index');
 
 /**
  * Parse a human instruction into intent and structured constraints.
- * @param {string} instruction - e.g. "Buy me running shoes under ₹2100" or "How are you?"
- * @param {object} options - Optional: previous_response_id
- * @returns {Promise<object>} - Parsed intent, constraints, clarification flags, and new response_id
+ * @param {string} instruction - e.g. "Buy me running shoes under 1500", "8 would work", "Place order", "Add socks and order"
+ * @param {object} options - Optional: conversationHistory (array of messages/events), previous_response_id
+ * @returns {Promise<object>} - Parsed intent, constraints, and reasoning
  */
 async function parseInstruction(instruction, options = {}) {
   const prevResponseId = options.previous_response_id || options.prev_response_id || null;
+  const history = Array.isArray(options.conversationHistory) ? options.conversationHistory : [];
+
+  const historyContext = history.length > 0
+    ? `\n\nCONVERSATION HISTORY:\n${history.map(m => `${m.role === 'user' || m.sender === 'human' ? 'User' : 'Agent'}: "${m.text || m.content}"`).join('\n')}`
+    : '';
+
+  const systemPrompt = `You are the AI brain of CatalogX — an open autonomous commerce buyer agent powered by Razorpay.
+Analyze the user's message in the context of the conversation history and classify into one of three intents:
+
+1. "order_confirmation": The user is confirming, approving, or placing the order for a previously recommended product.
+   Examples: "Place order", "Yes, place the order", "Go ahead", "Buy it", "Looks good", "Proceed with order", "Add bundle and place order", "Add socks and place order".
+   
+2. "shopping": The user is searching, browsing, asking for options, providing a size/color, or asking for alternatives.
+   Examples: "Buy me running shoes under 1500", "8 would work", "Show blue ones", "Do you have Adidas?", "Show other options", "Find wireless earbuds".
+
+3. "conversational": General greetings, pleasantries, questions about the system, or off-topic messages.
+   Examples: "Hello", "How does this work?", "Who are you?".
+
+Return a JSON object with this EXACT schema:
+{
+  "intent": "shopping" | "order_confirmation" | "conversational",
+  
+  // IF intent is "conversational":
+  "conversational_reply": string or null,
+  
+  // IF intent is "order_confirmation":
+  "apply_offer": boolean,              // true if the user confirmed WITH a bundle/add-on offer (e.g. "Add bundle and place order", "Add socks and buy")
+  "offer_id": string or null,          // specific offer id if mentioned or null
+  
+  // IF intent is "shopping" or "order_confirmation":
+  "query": string or null,             // clean search keywords ONLY (e.g. "running shoes", "wireless earbuds"). NEVER include price phrases in this query!
+  "category": string or null,          // broad category keyword or null
+  "budget_max_paise": number or null,  // max budget in paise (₹1 = 100 paise). E.g. "under 1500" -> 150000.
+  "budget_min_paise": number or null,  // min price in paise.
+  "user_provided_options": {           // ANY specific product option mentioned
+    "size": string or null,            // e.g. "8", "9", "M", "XL"
+    "color": string or null,           // e.g. "black", "white", "blue"
+    "brand": string or null,           // e.g. "Nike", "Adidas", "boAt", "Sony"
+    "volume": string or null,
+    "weight": string or null
+  },
+  "other_preferences": string[],       // e.g. ["lightweight", "cushioned"]
+  "urgency": "low" | "normal" | "high",
+  "reasoning": string                  // concise explanation of parsing
+}
+
+CRITICAL RULES & GROUNDING:
+1. ORDER CONFIRMATION RECOGNITION:
+   - If a product was already recommended in the conversation history and the user says "Place order", "Yes, go ahead", "Buy it", "Looks good", or clicks the place order button, set "intent": "order_confirmation".
+   - If the user says "Add socks and place order" or "Add bundle and buy", set "intent": "order_confirmation" and "apply_offer": true.
+2. MULTI-TURN CONTEXT RESOLUTION:
+   - If user provides an option (e.g. "8 would work", "size 9", "black ones"), carry forward previous query and budget from history.
+3. BUDGET CONVERSION:
+   - ₹1 = 100 paise. Convert "1500" -> 150000. "2000" -> 200000.`;
+
+  const userContent = `User Message: "${instruction}"${historyContext}`;
 
   const result = await chatJSON(
     [
       {
         role: 'system',
-        content: `You are the AI brain of CatalogX — an autonomous commerce buyer agent powered by Razorpay.
-Analyze the user's message in the context of the conversation history and determine whether it is a "shopping" request or a "conversational" / out-of-context query.
-
-Return a JSON object with this EXACT schema:
-{
-  "intent": "shopping" | "conversational",
-  
-  // IF intent is "conversational" (greetings, pleasantries, follow-ups like "how are you doing", "what was my first question", "can you write a poem", "what is this", "tell me a joke"):
-  "conversational_reply": string or null, // A natural, friendly response.
-  
-  // IF intent is "shopping" (searching, browsing, comparing, or buying products like shoes, sneakers, headphones, keyboards, etc.):
-  "category": string or null,          // "running-shoes", "casual-sneakers", "hiking-boots", "audio", "wearables", "computing", or null
-  "query": string or null,             // clean product keywords ONLY (e.g. "running shoes", "noise cancelling headphones", "nike sneakers"). NEVER include price, budget, or words like "under 3k", "below 5000" in this query string!
-  "budget_max_paise": number or null,  // max price in paise (₹1 = 100 paise). null if no budget mentioned. E.g. "under 1500" -> 150000. "under 2100" -> 210000. "under 30k" -> 3000000.
-  "budget_min_paise": number or null,  // min price in paise.
-  "required_size": string or null,     // e.g. "7", "8", "9", "10", "11", null
-  "preferred_color": string or null,   // e.g. "black", "white", null
-  "preferred_brand": string or null,   // e.g. "Nike", "Adidas", "Sony", null
-  "other_preferences": string[],       // e.g. ["waterproof", "lightweight", "flagship"]
-  "urgency": "low" | "normal" | "high",
-  "needs_clarification": boolean,      // true if an essential detail (like shoe size for footwear) is missing and MUST be clarified to complete an order accurately.
-  "clarification_question": string or null, // Concise question to ask the user. E.g. "What shoe size (e.g., UK 7, 8, 9, 10, 11) would you prefer? I'll check live inventory for you."
-  "reasoning": string                  // brief explanation of how you classified and parsed this message
-}
-
-CRITICAL CONVERSATIONAL & MEMORY RULES:
-1. NATURAL CONVERSATION & AVOID REPETITION:
-   - Do NOT introduce yourself or repeat "I'm CatalogX, your autonomous shopping assistant powered by Razorpay..." in every single prompt!
-   - Only introduce yourself in the initial greeting if not done yet. In ongoing conversation, speak naturally and concisely like a friendly, intelligent human shopping assistant.
-   - If the user asks follow-up questions (e.g., "what was my first question?", "how are you today?", "can you do this?"), use the conversation history to answer them accurately and directly.
-2. MINIMUM QUESTIONS / SIZING CLARIFICATION RULE:
-   - For footwear (shoes, sneakers, running shoes, boots): shoe size is essential to complete an order. If the user has NOT provided a size in this message or previous conversation context, set "needs_clarification": true and ask: "What shoe size (e.g., UK 7, 8, 9, 10, 11) would you prefer? I'll find the best pair in stock for you."
-   - If the user ALREADY provided a size (e.g. "size 9", "9", "UK 8"), set "needs_clarification": false and extract "required_size".
-   - For electronics, audio, or computing (headphones, keyboards, watches, cables), "needs_clarification" is false because sizes are not required.
-   - Do NOT ask too many questions. Stick to minimum essential questions only when critical for order accuracy.
-3. SHOPPING CATEGORY & QUERY RULES:
-   - If user says generic "shoes", "sneakers", "footwear", set category: null so all shoe types are searched.
-   - Strip all price mentions like "under 3k", "below 3000", "for 1500", "under 2100" from the query.
-4. BUDGET CONVERSION:
-   - Convert 'k' notation: "1.5k" or "1500" = ₹1,500 = 150000 paise. "2100" = ₹2,100 = 210000 paise. "30k" = ₹30,000 = 3000000 paise.`,
+        content: systemPrompt,
       },
       {
         role: 'user',
-        content: instruction,
+        content: userContent,
       },
     ],
     {
@@ -91,7 +107,7 @@ CRITICAL CONVERSATIONAL & MEMORY RULES:
     };
   }
 
-  // Clean query of any residual budget phrases for shopping
+  // Clean query of any residual budget phrases
   let cleanQuery = (result.query || '')
     .replace(/\b(under|below|less than|within|around|budget)\s*(rs\.?|inr|₹)?\s*\d+\s*(k|lakh)?\b/gi, '')
     .replace(/\b(rs\.?|inr|₹)\s*\d+\b/gi, '')
@@ -99,28 +115,42 @@ CRITICAL CONVERSATIONAL & MEMORY RULES:
 
   if (!cleanQuery) {
     cleanQuery = instruction
-      .replace(/\b(buy|order|purchase|get|find|me|a|some|pair|of)\b/gi, '')
+      .replace(/\b(buy|order|purchase|get|find|me|a|some|pair|of|place|confirm|yes)\b/gi, '')
       .replace(/\b(under|below|less than|within|around|budget)\s*(rs\.?|inr|₹)?\s*\d+\s*(k|lakh)?\b/gi, '')
       .replace(/\b(rs\.?|inr|₹)\s*\d+\b/gi, '')
       .trim();
   }
 
-  let category = result.category;
-  if (category === 'shoes' || category === 'sneakers' || category === 'footwear') {
-    category = null;
+  // Normalize user-provided options
+  const userOptions = result.user_provided_options || {};
+  let size = userOptions.size ? String(userOptions.size).replace(/^(uk|us|eu)\s*/i, '').trim() : null;
+
+  if (!size) {
+    const sizeMatch = instruction.match(/\b(?:size|uk)?\s*([6-9]|1[0-2]|s|m|l|xl|xxl)\b/i);
+    if (sizeMatch) {
+      size = sizeMatch[1];
+    }
   }
 
   return {
     instruction,
-    intent: 'shopping',
-    ...result,
-    category,
-    query: cleanQuery || 'footwear',
+    intent: result.intent || 'shopping',
+    apply_offer: !!result.apply_offer,
+    offer_id: result.offer_id || null,
+    query: cleanQuery || 'products',
+    category: result.category || null,
     budget_max_paise: result.budget_max_paise ? parseInt(result.budget_max_paise) : null,
     budget_min_paise: result.budget_min_paise ? parseInt(result.budget_min_paise) : null,
-    needs_clarification: !!result.needs_clarification,
-    clarification_question: result.clarification_question || null,
-    reasoning: result.reasoning || `Parsed shopping query for "${cleanQuery || 'items'}".`,
+    required_size: size,
+    user_provided_options: {
+      ...userOptions,
+      size,
+    },
+    preferred_color: userOptions.color || null,
+    preferred_brand: userOptions.brand || null,
+    other_preferences: Array.isArray(result.other_preferences) ? result.other_preferences : [],
+    urgency: result.urgency || 'normal',
+    reasoning: result.reasoning || `Parsed intent ${result.intent}.`,
     response_id: responseId,
   };
 }
@@ -151,19 +181,21 @@ function buildSearchFilters(constraints) {
  */
 function checkHardConstraints(product, constraints) {
   const reasons = [];
+  const pricePaise = product.price?.paise || product.price_paise || 0;
 
-  if (constraints.budget_max_paise && product.price.paise > constraints.budget_max_paise) {
-    reasons.push(`Price ${product.price.display} exceeds budget ₹${constraints.budget_max_paise / 100}`);
+  if (constraints.budget_max_paise && pricePaise > constraints.budget_max_paise) {
+    reasons.push(`Price ₹${pricePaise / 100} exceeds budget ₹${constraints.budget_max_paise / 100}`);
   }
 
-  if (constraints.required_size) {
+  if (constraints.required_size && Array.isArray(product.sizes) && product.sizes.length > 0 && !product.sizes.includes('onesize')) {
     const available = product.sizes || [];
-    if (!available.includes(constraints.required_size)) {
-      reasons.push(`Size ${constraints.required_size} not available (available: ${available.join(', ')})`);
+    const normalizedReq = String(constraints.required_size).replace(/^(uk|us|eu)\s*/i, '').trim();
+    if (!available.includes(normalizedReq)) {
+      reasons.push(`Size ${normalizedReq} not available (available: ${available.join(', ')})`);
     }
   }
 
-  if (!product.in_stock) {
+  if (product.in_stock === false || (product.stock !== undefined && product.stock <= 0)) {
     reasons.push('Product is out of stock');
   }
 

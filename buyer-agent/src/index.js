@@ -40,6 +40,7 @@ async function main() {
 
   const agent = new BuyerAgent();
   await agent.run(instruction);
+  process.exit(0);
 }
 
 main().catch((err) => {

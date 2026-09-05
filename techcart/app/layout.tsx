@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import SmoothScroll from '@/components/SmoothScroll';
+import { AuthProvider } from '@/context/AuthContext';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'TechCart Electronics — Precision Audio & Next-Gen Wearables',
-  description: 'High-fidelity audio, studio-grade ANC, AMOLED displays and powerful computing gear. Experience seamless Razorpay checkout on TechCart.',
+  title: 'TechCart -- Premium Audio & Computing Gear',
+  description: 'Studio-grade headphones, wireless earbuds, mechanical keyboards, and AMOLED smartwatches. Secure Razorpay checkout with express delivery across India.',
 };
 
 export default function RootLayout({
@@ -22,10 +23,6 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-        />
         <Script
           src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"
           strategy="beforeInteractive"
@@ -39,9 +36,11 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className="bg-[#04060A] text-slate-100 font-sans antialiased overflow-x-hidden selection:bg-[#2563EB] selection:text-white">
-        <SmoothScroll />
-        {children}
+      <body className="bg-[#FDFBF7] text-[#0C1220] font-sans antialiased overflow-x-hidden selection:bg-[#C67D3A] selection:text-white">
+        <AuthProvider>
+          <SmoothScroll />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

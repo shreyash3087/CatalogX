@@ -8,30 +8,26 @@
  *   - What the input was
  *   - What the output was
  *   - Why (human-readable reasoning)
- *   - How long it took
- *
- * Logs are written to: ./logs/<session_id>.json
- * Also sent to merchant server for real-time dashboard broadcast.
+ *   - Multi-tenant persistence to MongoDB Atlas (`catalogx_db.chat_sessions`)
  */
 
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const chalk = require('chalk');
-const axios = require('axios');
+const { appendEvent } = require('../db/sessionStore');
 
-const MERCHANT_URL = process.env.MERCHANT_SERVER_URL || 'http://localhost:3001';
 const LOGS_DIR = path.resolve(__dirname, '../../logs');
 
-// Ensure logs directory exists
 if (!fs.existsSync(LOGS_DIR)) {
   fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
 
 class AuditLogger {
-  constructor(sessionId, agentId) {
+  constructor(sessionId, agentId, userId = null) {
     this.sessionId = sessionId;
     this.agentId = agentId;
+    this.userId = userId || process.env.CATALOGX_USER_ID || 'user_shreyash_001';
     this.stepCount = 0;
     this.entries = [];
     this.startTime = Date.now();
@@ -40,7 +36,7 @@ class AuditLogger {
 
   /**
    * Log a single agent step.
-   * @param {string} action - e.g. 'CATALOG_DISCOVERED', 'PRODUCT_SELECTED'
+   * @param {string} action - e.g. 'CATALOG_DISCOVERED', 'PRODUCT_SELECTED', 'GATE_CHECKED'
    * @param {object} input - What triggered this action
    * @param {object} output - What resulted
    * @param {string} reasoning - Human-readable explanation
@@ -54,6 +50,7 @@ class AuditLogger {
       id: uuidv4(),
       session_id: this.sessionId,
       agent_id: this.agentId,
+      user_id: this.userId,
       step: this.stepCount,
       action,
       input_data: input,
@@ -65,15 +62,20 @@ class AuditLogger {
 
     this.entries.push(entry);
 
-    // Write to local file
-    fs.writeFileSync(this.logFile, JSON.stringify(this.entries, null, 2));
-
-    // Notify merchant server (non-blocking)
+    // 1. Persist to MongoDB Atlas `catalogx_db.chat_sessions`
     try {
-      await axios.post(`${MERCHANT_URL}/api/audit/agent`, {
-        ...entry,
-        merchant_id: 'merchant_urbanstride_001',
-      }, { timeout: 2000 }).catch(() => {}); // Fire-and-forget, don't block agent
+      await appendEvent(this.userId, this.sessionId, {
+        action,
+        input_data: input,
+        output_data: output,
+        reasoning,
+        agentId: this.agentId,
+      });
+    } catch (_) {}
+
+    // 2. Write to local file as secondary fallback
+    try {
+      fs.writeFileSync(this.logFile, JSON.stringify(this.entries, null, 2));
     } catch (_) {}
 
     // Terminal output
@@ -95,6 +97,7 @@ class AuditLogger {
     return {
       session_id: this.sessionId,
       agent_id: this.agentId,
+      user_id: this.userId,
       total_steps: this.stepCount,
       duration_seconds: duration,
       entries: this.entries,
@@ -103,11 +106,11 @@ class AuditLogger {
   }
 
   _actionColor(action) {
-    if (action.includes('FAIL') || action.includes('REJECT') || action.includes('OUT'))
+    if (action.includes('FAIL') || action.includes('REJECT') || action.includes('OUT') || action.includes('ERROR'))
       return chalk.red;
-    if (action.includes('RETRY') || action.includes('FALLBACK') || action.includes('NOTIFY'))
+    if (action.includes('RETRY') || action.includes('FALLBACK') || action.includes('CLARIFICATION') || action.includes('QUESTION'))
       return chalk.yellow;
-    if (action.includes('VERIFIED') || action.includes('SUCCESS') || action.includes('PAID'))
+    if (action.includes('VERIFIED') || action.includes('SUCCESS') || action.includes('PAID') || action.includes('COMPLETED') || action.includes('SELECTED'))
       return chalk.green;
     return chalk.cyan;
   }

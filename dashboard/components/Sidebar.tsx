@@ -65,13 +65,10 @@ export default function Sidebar({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/razorpay-logo-normal.png"
-              alt="Razorpay Blade"
+              alt="Razorpay"
               className="h-6 w-auto object-contain"
             />
-            <span className="text-sm font-bold text-white tracking-tight">Razorpay Agent</span>
-            <span className="px-1.5 py-0.2 rounded text-[8.5px] font-bold font-mono uppercase bg-blue-950 text-[#60a5fa] border border-blue-800/60">
-              BETA
-            </span>
+            <span className="text-sm font-bold text-white tracking-tight">RazorPay Buildathon</span>
           </div>
           <div className="text-[10px] text-slate-400 font-medium mt-1.5">
             CatalogX · Agentic Commerce

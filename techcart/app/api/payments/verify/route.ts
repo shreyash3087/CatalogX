@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     const db = await getTechCartDb();
-    const order = await db.collection('orders').findOne({ razorpayOrderId: razorpay_order_id });
+    const order = db ? await db.collection('orders').findOne({ razorpayOrderId: razorpay_order_id }) : null;
 
     if (order) {
       await saveTechCartOrder({

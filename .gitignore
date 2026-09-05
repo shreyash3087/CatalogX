@@ -18,7 +18,10 @@ node_modules/
 dist/
 build/
 .next/
+**/.next/
 out/
+*.tsbuildinfo
+scratch/
 
 # SQLite databases
 *.db

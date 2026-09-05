@@ -72,7 +72,7 @@ export default function MandateVaultModal({
     setIsRegistering(true);
     try {
       // 1. Create ₹1.00 mandate registration authorization order
-      const regRes = await fetch('http://localhost:3001/api/mandates/register', {
+      const regRes = await fetch('/api/mandates/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -103,7 +103,7 @@ export default function MandateVaultModal({
         handler: async function (response: any) {
           try {
             // 3. Cryptographically verify signature and issue mandate token
-            const vRes = await fetch('http://localhost:3001/api/mandates/verify', {
+            const vRes = await fetch('/api/mandates/verify', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -161,7 +161,7 @@ export default function MandateVaultModal({
       onConfirm: async () => {
         setIsRevoking(true);
         try {
-          const res = await fetch('http://localhost:3001/api/mandates/revoke', { method: 'POST' });
+          const res = await fetch('/api/mandates/revoke', { method: 'POST' });
           if (res.ok) {
             onMandateUpdated(null);
             localStorage.removeItem('catalogx_active_mandate');

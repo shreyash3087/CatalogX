@@ -104,7 +104,7 @@ export default function CartDrawer({
         description: `${primaryItem.product.name} (UK ${primaryItem.size})`,
         order_id: orderData.razorpay_order_id,
         prefill: { name, contact: phone },
-        theme: { color: '#2563EB' },
+        theme: { color: '#0f0f0f' },
         handler: async (response: any) => {
           await fetch('/api/payments/verify', {
             method: 'POST',
@@ -140,25 +140,25 @@ export default function CartDrawer({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end bg-black/75 backdrop-blur-xs animate-fade-in font-sans selection:bg-blue-600 selection:text-white">
+    <div className="fixed inset-0 z-[100] flex justify-end bg-black/60 backdrop-blur-sm animate-fade-in font-sans selection:bg-[#0f0f0f] selection:text-white">
       <div className="flex-1" onClick={onClose} />
 
-      <div className="w-full max-w-md bg-[#080B11] border-l border-white/10 text-slate-100 h-full flex flex-col shadow-2xl relative z-10">
+      <div className="w-full max-w-md bg-[#F8F7F4] border-l border-[#E0DDD9] text-[#0f0f0f] h-full flex flex-col shadow-2xl relative z-10">
         {/* Drawer Header */}
-        <div className="p-6 border-b border-white/10 flex items-center justify-between">
+        <div className="p-6 border-b border-[#E0DDD9] flex items-center justify-between">
           <div>
-            <h3 className="font-heading font-bold text-xl text-white uppercase tracking-wider">
+            <h3 className="font-heading font-bold text-xl text-[#0f0f0f] uppercase tracking-wider">
               {step === 'cart' && `Your Cart (${totalQuantity})`}
               {step === 'checkout' && 'Shipping & Delivery'}
               {step === 'success' && 'Order Placed!'}
             </h3>
-            <p className="text-[11px] text-emerald-400 font-medium mt-0.5">
+            <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
               ✓ Free Express Shipping on this order
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+            className="p-2 text-[#aaa] hover:text-[#0f0f0f] rounded-lg hover:bg-[#EEECEA] transition-colors cursor-pointer"
           >
             <i className="fa-solid fa-xmark text-lg"></i>
           </button>
@@ -170,9 +170,9 @@ export default function CartDrawer({
             <>
               {cart.length === 0 ? (
                 <div className="py-24 text-center space-y-4">
-                  <div className="text-4xl opacity-50">👟</div>
-                  <div className="font-heading font-bold text-xl text-white uppercase">Your Bag Is Empty</div>
-                  <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                  <div className="text-4xl opacity-40">👟</div>
+                  <div className="font-heading font-bold text-xl text-[#0f0f0f] uppercase">Your Bag Is Empty</div>
+                  <p className="text-xs text-[#999] max-w-xs mx-auto">
                     Explore our curated footwear drops and add pairs to your cart.
                   </p>
                 </div>
@@ -181,9 +181,9 @@ export default function CartDrawer({
                   {cart.map((item, idx) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-2xl bg-[#0E121B] border border-white/10 flex gap-4 items-center"
+                      className="p-4 rounded-2xl bg-white border border-[#E8E6E2] flex gap-4 items-center"
                     >
-                      <div className="w-16 h-16 rounded-xl bg-black/40 p-2 flex items-center justify-center flex-shrink-0">
+                      <div className="w-16 h-16 rounded-xl bg-[#EEECEA] p-2 flex items-center justify-center flex-shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={item.product.image || '/assets/urbanstride/Shoe1.png'}
@@ -193,13 +193,13 @@ export default function CartDrawer({
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-mono font-bold text-blue-400 uppercase">
+                        <div className="text-[10px] font-mono font-bold text-[#aaa] uppercase">
                           {item.product.brand}
                         </div>
-                        <h4 className="font-heading font-bold text-sm text-white truncate uppercase">
+                        <h4 className="font-heading font-bold text-sm text-[#0f0f0f] truncate uppercase">
                           {item.product.name}
                         </h4>
-                        <div className="text-xs text-slate-400 font-mono mt-0.5">
+                        <div className="text-xs text-[#999] font-mono mt-0.5">
                           Size: UK {item.size} · ₹{((item.product.price_paise * item.quantity) / 100).toLocaleString('en-IN')}
                         </div>
                       </div>
@@ -208,20 +208,20 @@ export default function CartDrawer({
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                           onClick={() => onUpdateQuantity(idx, item.quantity - 1)}
-                          className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/15 text-xs text-white font-bold flex items-center justify-center cursor-pointer"
+                          className="w-7 h-7 rounded-lg bg-[#EEECEA] hover:bg-[#E0DDD9] text-xs text-[#0f0f0f] font-bold flex items-center justify-center cursor-pointer"
                         >
                           -
                         </button>
-                        <span className="text-xs font-mono font-bold w-4 text-center">{item.quantity}</span>
+                        <span className="text-xs font-mono font-bold w-4 text-center text-[#0f0f0f]">{item.quantity}</span>
                         <button
                           onClick={() => onUpdateQuantity(idx, item.quantity + 1)}
-                          className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/15 text-xs text-white font-bold flex items-center justify-center cursor-pointer"
+                          className="w-7 h-7 rounded-lg bg-[#EEECEA] hover:bg-[#E0DDD9] text-xs text-[#0f0f0f] font-bold flex items-center justify-center cursor-pointer"
                         >
                           +
                         </button>
                         <button
                           onClick={() => onRemoveItem(idx)}
-                          className="text-slate-500 hover:text-rose-400 text-xs p-1 ml-1 cursor-pointer"
+                          className="text-[#ccc] hover:text-rose-500 text-xs p-1 ml-1 cursor-pointer"
                           title="Remove item"
                         >
                           <i className="fa-solid fa-trash-can"></i>
@@ -238,60 +238,60 @@ export default function CartDrawer({
             <form id="cart-checkout-form" onSubmit={handleCheckoutSubmit} className="space-y-4">
               <div className="space-y-3.5 text-xs">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Full Name *</label>
+                  <label className="block text-[11px] font-semibold text-[#555] mb-1">Full Name *</label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Shreyash Srivastava"
-                    className="w-full px-3.5 py-3 rounded-xl bg-[#0E121B] border border-white/10 text-white focus:outline-none focus:border-blue-500 text-xs"
+                    className="w-full px-3.5 py-3 rounded-xl bg-white border border-[#D8D5D0] text-[#0f0f0f] focus:outline-none focus:border-[#0f0f0f] text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Phone Number *</label>
+                  <label className="block text-[11px] font-semibold text-[#555] mb-1">Phone Number *</label>
                   <input
                     type="tel"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+91 98765 43210"
-                    className="w-full px-3.5 py-3 rounded-xl bg-[#0E121B] border border-white/10 text-white focus:outline-none focus:border-blue-500 text-xs"
+                    className="w-full px-3.5 py-3 rounded-xl bg-white border border-[#D8D5D0] text-[#0f0f0f] focus:outline-none focus:border-[#0f0f0f] text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Delivery Street Address *</label>
+                  <label className="block text-[11px] font-semibold text-[#555] mb-1">Delivery Street Address *</label>
                   <input
                     type="text"
                     required
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
                     placeholder="Flat 402, Skyline Residency, 100ft Road"
-                    className="w-full px-3.5 py-3 rounded-xl bg-[#0E121B] border border-white/10 text-white focus:outline-none focus:border-blue-500 text-xs"
+                    className="w-full px-3.5 py-3 rounded-xl bg-white border border-[#D8D5D0] text-[#0f0f0f] focus:outline-none focus:border-[#0f0f0f] text-xs"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">City *</label>
+                    <label className="block text-[11px] font-semibold text-[#555] mb-1">City *</label>
                     <input
                       type="text"
                       required
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full px-3.5 py-3 rounded-xl bg-[#0E121B] border border-white/10 text-white focus:outline-none focus:border-blue-500 text-xs"
+                      className="w-full px-3.5 py-3 rounded-xl bg-white border border-[#D8D5D0] text-[#0f0f0f] focus:outline-none focus:border-[#0f0f0f] text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">PIN Code *</label>
+                    <label className="block text-[11px] font-semibold text-[#555] mb-1">PIN Code *</label>
                     <input
                       type="text"
                       required
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}
-                      className="w-full px-3.5 py-3 rounded-xl bg-[#0E121B] border border-white/10 text-white focus:outline-none focus:border-blue-500 text-xs"
+                      className="w-full px-3.5 py-3 rounded-xl bg-white border border-[#D8D5D0] text-[#0f0f0f] focus:outline-none focus:border-[#0f0f0f] text-xs"
                     />
                   </div>
                 </div>
@@ -301,14 +301,14 @@ export default function CartDrawer({
 
           {step === 'success' && completedOrder && (
             <div className="py-12 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500 text-emerald-400 text-3xl flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-600 text-3xl flex items-center justify-center mx-auto">
                 <i className="fa-solid fa-check"></i>
               </div>
-              <h3 className="font-heading font-bold text-2xl text-white uppercase">Order Confirmed!</h3>
-              <p className="text-xs text-slate-300 max-w-xs mx-auto">
+              <h3 className="font-heading font-bold text-2xl text-[#0f0f0f] uppercase">Order Confirmed!</h3>
+              <p className="text-xs text-[#777] max-w-xs mx-auto">
                 Your footwear purchase for {completedOrder.amountDisplay} has been successfully placed.
               </p>
-              <div className="p-3 bg-[#0E121B] rounded-xl font-mono text-[11px] text-slate-400">
+              <div className="p-3 bg-[#EEECEA] rounded-xl font-mono text-[11px] text-[#888]">
                 Payment ID: {completedOrder.paymentId}
               </div>
             </div>
@@ -316,15 +316,15 @@ export default function CartDrawer({
         </div>
 
         {/* Drawer Footer Actions */}
-        <div className="p-6 border-t border-white/10 bg-[#05070B] space-y-4">
+        <div className="p-6 border-t border-[#E0DDD9] bg-white space-y-4">
           {step === 'cart' && cart.length > 0 && (
             <>
               <div className="space-y-1.5 text-xs font-mono">
-                <div className="flex items-center justify-between text-slate-400">
+                <div className="flex items-center justify-between text-[#999]">
                   <span>Estimated Total</span>
-                  <span className="font-bold text-white text-base">₹{(subtotalPaise / 100).toLocaleString('en-IN')}</span>
+                  <span className="font-bold text-[#0f0f0f] text-[15px]">₹{(subtotalPaise / 100).toLocaleString('en-IN')}</span>
                 </div>
-                <div className="flex items-center justify-between text-emerald-400 text-[11px]">
+                <div className="flex items-center justify-between text-emerald-700 text-[11px]">
                   <span>You Saved</span>
                   <span>₹{(savingsPaise / 100).toLocaleString('en-IN')}</span>
                 </div>
@@ -332,7 +332,7 @@ export default function CartDrawer({
 
               <button
                 onClick={() => setStep('checkout')}
-                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold text-sm uppercase tracking-wider shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-2xl bg-[#0f0f0f] hover:bg-[#2a2a2a] text-white font-heading font-bold text-sm uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <span>PROCEED TO CHECKOUT</span>
                 <i className="fa-solid fa-arrow-right text-xs"></i>
@@ -346,7 +346,7 @@ export default function CartDrawer({
                 type="submit"
                 form="cart-checkout-form"
                 disabled={isProcessing}
-                className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-heading font-bold text-sm uppercase tracking-wider shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-2xl bg-[#0f0f0f] hover:bg-[#2a2a2a] text-white font-heading font-bold text-sm uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isProcessing ? (
                   <>
@@ -363,7 +363,7 @@ export default function CartDrawer({
               <button
                 type="button"
                 onClick={() => setStep('cart')}
-                className="w-full py-2 text-xs text-slate-400 hover:text-white font-medium cursor-pointer"
+                className="w-full py-2 text-xs text-[#aaa] hover:text-[#0f0f0f] font-medium cursor-pointer"
               >
                 ← Back to Cart
               </button>
@@ -373,7 +373,7 @@ export default function CartDrawer({
           {step === 'success' && (
             <button
               onClick={onClose}
-              className="w-full py-4 rounded-2xl bg-white text-black font-heading font-bold text-xs uppercase tracking-wider"
+              className="w-full py-4 rounded-2xl bg-[#0f0f0f] text-white font-heading font-bold text-xs uppercase tracking-wider hover:bg-[#2a2a2a] transition-colors"
             >
               CONTINUE SHOPPING
             </button>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import SmoothScroll from '@/components/SmoothScroll';
+import { AuthProvider } from '@/context/AuthContext';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -40,8 +41,10 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#080B11] text-slate-100 font-sans antialiased overflow-x-hidden selection:bg-white selection:text-black">
-        <SmoothScroll />
-        {children}
+        <AuthProvider>
+          <SmoothScroll />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

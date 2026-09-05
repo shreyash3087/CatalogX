@@ -109,7 +109,7 @@
       if (user.isLoggedIn) {
         mount.innerHTML = `
           <button onclick="openStoreGoogleAuth()" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs group">
-            ${user.avatar ? `<img src="${user.avatar}" alt="${user.name}" class="w-5 h-5 rounded-full object-cover border border-emerald-500/80">` : `<div class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-[10px]">${user.name.charAt(0)}</div>`}
+            ${user.avatar ? `<img src="${user.avatar}" alt="${user.name}" referrerpolicy="no-referrer" crossorigin="anonymous" onerror="this.outerHTML='<div class=\\'w-5 h-5 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-[10px]\\'>${(user.name||'U').charAt(0).toUpperCase()}</div>'" class="w-5 h-5 rounded-full object-cover border border-emerald-500/80">` : `<div class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-[10px]">${(user.name||'U').charAt(0).toUpperCase()}</div>`}
             <span class="max-w-[100px] truncate hidden sm:inline">${user.name}</span>
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
@@ -176,7 +176,7 @@
     if (user.isLoggedIn) {
       body.innerHTML = `
         <div class="flex items-center gap-3.5 p-3.5 bg-[#141b27] border border-[#22314a] rounded-xl">
-          ${user.avatar ? `<img src="${user.avatar}" alt="${user.name}" class="w-11 h-11 rounded-full object-cover border border-emerald-500">` : `<div class="w-11 h-11 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center">${user.name.charAt(0)}</div>`}
+          ${user.avatar ? `<img src="${user.avatar}" alt="${user.name}" referrerpolicy="no-referrer" crossorigin="anonymous" onerror="this.outerHTML='<div class=\\'w-11 h-11 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-base\\'>${(user.name||'U').charAt(0).toUpperCase()}</div>'" class="w-11 h-11 rounded-full object-cover border border-emerald-500">` : `<div class="w-11 h-11 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-base">${(user.name||'U').charAt(0).toUpperCase()}</div>`}
           <div>
             <div class="text-sm font-bold text-white">${user.name}</div>
             <div class="text-xs text-slate-400">${user.email}</div>

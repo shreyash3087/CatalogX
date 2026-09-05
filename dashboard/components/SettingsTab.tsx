@@ -49,6 +49,33 @@ export default function SettingsTab({
     setAvatarError(false);
     onUserChange(loggedUser);
     localStorage.setItem('catalogx_user', JSON.stringify(loggedUser));
+
+    // Immediately persist user to MongoDB users collection & restore existing profile
+    fetch('/api/users/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(loggedUser),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.profile?.delivery_address?.street || data?.profile?.phone) {
+          const merged: UserProfile = {
+            ...loggedUser,
+            phone: data.profile.phone || loggedUser.phone || '',
+            delivery_address: data.profile.delivery_address,
+          };
+          onUserChange(merged);
+          localStorage.setItem('catalogx_user', JSON.stringify(merged));
+          if (merged.phone) setInputPhone(merged.phone);
+          if (merged.delivery_address?.street) setInputStreet(merged.delivery_address.street);
+          if (merged.delivery_address?.city) setInputCity(merged.delivery_address.city);
+          if (merged.delivery_address?.state) setInputState(merged.delivery_address.state);
+          if (merged.delivery_address?.postal_code) setInputPostalCode(merged.delivery_address.postal_code);
+          if (merged.delivery_address?.country) setInputCountry(merged.delivery_address.country);
+        }
+      })
+      .catch(() => {});
+
     notify({
       title: 'Google Sign-In Successful',
       message: `Welcome, ${loggedUser.name}! Please configure your delivery address below to enable the AI Buyer Agent.`,
@@ -82,7 +109,7 @@ export default function SettingsTab({
     setShowEditDelivery(false);
 
     // Sync with MongoDB backend
-    fetch('http://localhost:3001/api/users/profile', {
+    fetch('/api/users/profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updated),
@@ -537,16 +564,24 @@ export default function SettingsTab({
 
             <div className="flex items-center gap-2.5 flex-shrink-0">
               {isMandateActive ? (
-                <span className="px-3 py-1 rounded-full text-[10.5px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1.5">
+                <span
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-bold flex items-center gap-1.5 border shadow-2xs ${
+                    isLight
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : 'bg-emerald-950/60 text-emerald-300 border-emerald-700/60'
+                  }`}
+                >
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span>MANDATE ACTIVE</span>
                 </span>
               ) : (
-                <span className={`px-3 py-1 rounded-full text-[10.5px] font-bold border ${
-                  isLight
-                    ? 'bg-slate-200 text-slate-800 border-slate-300'
-                    : 'bg-[#182338] text-slate-200 border-[#2b3c5a]'
-                }`}>
+                <span
+                  className={`px-3 py-1 rounded-full text-[10.5px] font-bold border ${
+                    isLight
+                      ? 'bg-slate-100 text-slate-700 border-slate-300'
+                      : 'bg-[#182338] text-slate-200 border-[#2b3c5a]'
+                  }`}
+                >
                   NO ACTIVE MANDATE
                 </span>
               )}

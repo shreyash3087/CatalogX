@@ -44,18 +44,26 @@ export async function POST(req: NextRequest) {
       }, { status: 409 });
     }
 
-    const custName = customer.name || body.customer_name || 'Guest User';
-    const custEmail = customer.email || body.customer_email || 'guest@example.com';
-    const custPhone = customer.phone || body.customer_phone || '+91 99999 99999';
+    const custName = customer.name || body.customer_name || '';
+    const custEmail = customer.email || body.customer_email || '';
+    const custPhone = customer.phone || body.customer_phone || '';
 
-    const shipStreet = shipping_address.street || body.shipping_street || 'Indiranagar';
-    const shipCity = shipping_address.city || body.shipping_city || 'Bengaluru';
-    const shipState = shipping_address.state || body.shipping_state || 'Karnataka';
-    const shipPostalCode = shipping_address.postal_code || body.shipping_postal_code || '560038';
+    const shipStreet = shipping_address.street || body.shipping_street || '';
+    const shipCity = shipping_address.city || body.shipping_city || '';
+    const shipState = shipping_address.state || body.shipping_state || '';
+    const shipPostalCode = shipping_address.postal_code || body.shipping_postal_code || '';
     const shipCountry = shipping_address.country || body.shipping_country || 'India';
+    let amount_paise = product.price_paise * quantity;
+    let appliedOffer = null;
 
-    const amount_paise = product.price_paise * quantity;
-    const orderId = `order_${crypto.randomUUID()}`;
+    if (body.apply_offer && product.offers && product.offers.length > 0) {
+      const offer = product.offers.find((o: any) => o.id === body.offer_id) || product.offers[0];
+      if (offer && offer.bundle_price_paise) {
+        amount_paise += offer.bundle_price_paise;
+        appliedOffer = offer;
+      }
+    }
+
     const receiptId = `rcpt_${crypto.randomBytes(8).toString('hex')}`;
 
     const razorpayOrder = await razorpay.orders.create({
@@ -72,8 +80,11 @@ export async function POST(req: NextRequest) {
         customer_email: custEmail,
         customer_phone: custPhone,
         shipping_destination: `${shipStreet}, ${shipCity}, ${shipState} - ${shipPostalCode}`,
+        applied_offer: appliedOffer ? appliedOffer.name : 'none',
       },
     });
+
+    const orderId = razorpayOrder.id;
 
     // Decrement stock
     await updateTechCartStock(product.id, product.stock - quantity);

@@ -2,8 +2,14 @@ import { NextResponse } from 'next/server';
 import { trackTechCartDiscovery, getTechCartProducts } from '@/lib/db';
 
 export async function GET() {
-  await trackTechCartDiscovery();
-  const products = await getTechCartProducts();
+  trackTechCartDiscovery().catch(() => {});
+  let products = [];
+  try {
+    products = await getTechCartProducts();
+  } catch (e) {
+    const { ELECTRONICS_PRODUCTS } = await import('@/lib/products');
+    products = ELECTRONICS_PRODUCTS;
+  }
 
   const categories = Array.from(new Set(products.map((p) => p.category)));
   const brands = Array.from(new Set(products.map((p) => p.brand)));
@@ -17,6 +23,7 @@ export async function GET() {
       category: 'electronics',
       description: 'Next-gen audio gear, mechanical keyboards, and smartwatches with Razorpay 1-click agentic checkout.',
       base_url: 'http://localhost:3002',
+      currency: 'INR',
     },
     capabilities: {
       discovery: true,
@@ -25,6 +32,10 @@ export async function GET() {
       autonomous_order_creation: true,
       razorpay_integrated: true,
       tokenhq_mandate_supported: true,
+      options_supported: {
+        sizing: false,
+        variants: ['color', 'connectivity'],
+      },
     },
     catalog: {
       total_products: products.length,
@@ -45,6 +56,11 @@ export async function GET() {
         min: Math.min(...products.map((p) => p.price_paise)) / 100,
         max: Math.max(...products.map((p) => p.price_paise)) / 100,
       },
+    },
+    policies: {
+      warranty: '1-Year Official Brand Manufacturer Warranty',
+      returns: '7-day replacement for manufacturing defects',
+      shipping: 'Express courier delivery with transit insurance',
     },
     endpoints: {
       catalog_manifest: {

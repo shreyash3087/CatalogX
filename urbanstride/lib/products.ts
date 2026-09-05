@@ -1,3 +1,21 @@
+export interface ProductOption {
+  key: string;
+  label: string;
+  type: 'select' | 'text' | 'number';
+  available_options: string[];
+  required: boolean;
+}
+
+export interface ProductOffer {
+  id: string;
+  type: 'bundle_add_on' | 'cross_sell' | 'discount';
+  name: string;
+  original_price_paise: number;
+  bundle_price_paise: number;
+  discount: string;
+  description: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -12,6 +30,8 @@ export interface Product {
   image?: string;
   rating?: number;
   reviews_count?: number;
+  required_options?: ProductOption[];
+  offers?: ProductOffer[];
 }
 
 export const FOOTWEAR_PRODUCTS: Product[] = [
@@ -29,6 +49,21 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Shoe1.png',
     rating: 4.8,
     reviews_count: 328,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['6', '7', '8', '9', '10', '11'], required: true },
+      { key: 'color', label: 'Color', type: 'select', available_options: ['black', 'white', 'blue'], required: false },
+    ],
+    offers: [
+      {
+        id: 'offer_nike_socks',
+        type: 'bundle_add_on',
+        name: 'Nike Everyday Cushioned Socks (3-Pack)',
+        original_price_paise: 59900,
+        bundle_price_paise: 24900,
+        discount: '58% OFF',
+        description: 'Add premium sweat-wicking Nike socks for only ₹249 (Save ₹350)',
+      },
+    ],
   },
   {
     id: 'prod_002',
@@ -44,6 +79,9 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Shoe2.png',
     rating: 4.7,
     reviews_count: 214,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['7', '8', '9', '10', '11'], required: true },
+    ],
   },
   {
     id: 'prod_003',
@@ -58,97 +96,129 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     tags: ['running', 'performance', 'nitro-foam', 'speed', 'race'],
     image: '/assets/urbanstride/Shoe3.png',
     rating: 4.9,
-    reviews_count: 189,
+    reviews_count: 145,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['7', '8', '9', '10'], required: true },
+    ],
   },
   {
     id: 'prod_004',
     name: 'Skechers GO RUN Consistent',
-    description: 'Affordable and durable running shoe with responsive 5GEN cushioning. Great for beginners and everyday joggers. Machine washable upper.',
+    description: 'Well-cushioned lace-up runner with ULTRA LIGHT midsole and Air-Cooled Goga Mat insole. High-rebound cushioning for long distance training.',
     category: 'running-shoes',
     brand: 'Skechers',
     price_paise: 179900,
     sizes: ['6', '7', '8', '9', '10', '11', '12'],
-    colors: ['navy', 'red', 'black'],
+    colors: ['navy-orange', 'all-black', 'grey-lime'],
     stock: 20,
-    tags: ['running', 'beginner', 'affordable', 'cushioning', 'everyday'],
+    tags: ['running', 'cushioned', 'goga-mat', 'ultra-light', 'wide-fit'],
     image: '/assets/urbanstride/Shoe4.png',
     rating: 4.6,
-    reviews_count: 412,
+    reviews_count: 512,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['6', '7', '8', '9', '10', '11', '12'], required: true },
+    ],
   },
   {
     id: 'prod_005',
     name: 'Reebok Forever Floatride Energy 4',
-    description: 'Premium running shoe with Floatride Energy foam for plush yet responsive cushioning. Ideal for long-distance running and marathon training.',
+    description: 'Lightweight and responsive daily trainer with Floatride Energy Foam. Engineered mesh upper provides breathability and flexible support.',
     category: 'running-shoes',
     brand: 'Reebok',
     price_paise: 269900,
     sizes: ['7', '8', '9', '10', '11'],
-    colors: ['white', 'orange', 'black'],
+    colors: ['pure-grey', 'vector-navy', 'core-black'],
     stock: 7,
-    tags: ['running', 'long-distance', 'marathon', 'premium', 'floatride'],
-    image: '/assets/urbanstride/Image1.png',
+    tags: ['running', 'responsive', 'floatride', 'daily-trainer', 'durable'],
+    image: '/assets/urbanstride/Shoe1.png',
     rating: 4.7,
     reviews_count: 98,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['7', '8', '9', '10', '11'], required: true },
+    ],
   },
   {
     id: 'prod_006',
     name: 'Under Armour Charged Rogue 3',
-    description: 'Versatile running shoe with Charged Cushioning midsole. Great for track workouts, casual runs, and gym sessions. Durable rubber outsole.',
+    description: 'Dual-density Charged Cushioning midsole for the ultimate blend of comfort and explosive energy return. Lightweight two-tone mesh upper.',
     category: 'running-shoes',
     brand: 'Under Armour',
     price_paise: 239900,
     sizes: ['7', '8', '9', '10', '11'],
-    colors: ['black', 'red', 'grey'],
+    colors: ['black-white', 'mod-grey', 'academy-blue'],
     stock: 9,
-    tags: ['running', 'versatile', 'gym', 'track', 'charged-cushioning'],
-    image: '/assets/urbanstride/Image2.png',
-    rating: 4.5,
-    reviews_count: 142,
+    tags: ['running', 'charged-cushioning', 'energy-return', 'dual-density'],
+    image: '/assets/urbanstride/Shoe2.png',
+    rating: 4.8,
+    reviews_count: 167,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['7', '8', '9', '10', '11'], required: true },
+    ],
   },
   {
     id: 'prod_007',
     name: 'New Balance Fresh Foam 1080v13',
-    description: 'Ultra-plush running shoe with Fresh Foam X midsole for a supremely cushioned ride. Top pick for long runs and recovery days.',
+    description: 'The pinnacle of plush cushioning. Fresh Foam X midsole delivers unprecedented softness and smooth transitions for marathon distances.',
     category: 'running-shoes',
     brand: 'New Balance',
     price_paise: 349900,
     sizes: ['7', '8', '9', '10', '11'],
-    colors: ['blue', 'black', 'white'],
+    colors: ['starlight', 'black-metallic', 'white-silver'],
     stock: 4,
-    tags: ['running', 'plush', 'long-run', 'recovery', 'ultra-cushioned'],
-    image: '/assets/urbanstride/Image3.png',
+    tags: ['running', 'fresh-foam', 'max-cushion', 'marathon', 'premium'],
+    image: '/assets/urbanstride/Shoe3.png',
     rating: 4.9,
-    reviews_count: 276,
+    reviews_count: 420,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['7', '8', '9', '10', '11'], required: true },
+    ],
   },
   {
     id: 'prod_008',
     name: 'ASICS Gel-Nimbus 25',
-    description: 'Top-of-the-line neutral running shoe with gel cushioning for maximum shock absorption. Recommended for overpronators and high-mileage runners.',
+    description: 'PureGEL technology and FF BLAST PLUS ECO cushioning provide cloud-like softness. Engineered knit upper wraps the foot with a soft feel.',
     category: 'running-shoes',
     brand: 'ASICS',
     price_paise: 379900,
     sizes: ['7', '8', '9', '10'],
-    colors: ['black', 'white', 'silver'],
+    colors: ['sheet-rock', 'black-pure-silver', 'island-blue'],
     stock: 0,
-    tags: ['running', 'gel-cushioning', 'overpronation', 'high-mileage', 'neutral'],
-    image: '/assets/urbanstride/Image4.png',
-    rating: 4.8,
-    reviews_count: 512,
+    tags: ['running', 'gel-cushioning', 'max-plush', 'long-distance'],
+    image: '/assets/urbanstride/Shoe4.png',
+    rating: 4.9,
+    reviews_count: 610,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['7', '8', '9', '10'], required: true },
+    ],
   },
   {
     id: 'prod_009',
     name: "Nike Air Force 1 '07",
-    description: 'The iconic all-white leather sneaker. Timeless silhouette with Air-Sole unit for everyday cushioning. A wardrobe essential.',
+    description: 'Legendary basketball-inspired streetwear sneaker. Crisp leather edges and Nike Air cushioning provide iconic style and comfort.',
     category: 'casual-sneakers',
     brand: 'Nike',
     price_paise: 799900,
     sizes: ['6', '7', '8', '9', '10', '11'],
-    colors: ['white', 'black', 'triple-white'],
+    colors: ['triple-white', 'triple-black', 'white-gym-red'],
     stock: 15,
-    tags: ['casual', 'iconic', 'leather', 'everyday', 'classic', 'streetwear'],
+    tags: ['casual', 'air-force-1', 'streetwear', 'classic', 'leather', 'iconic'],
     image: '/assets/urbanstride/Shoe1.png',
     rating: 5.0,
     reviews_count: 1420,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['6', '7', '8', '9', '10', '11'], required: true },
+    ],
+    offers: [
+      {
+        id: 'offer_sneaker_crease_protector',
+        type: 'bundle_add_on',
+        name: 'Anti-Crease Shoe Shields (2 Pairs)',
+        original_price_paise: 49900,
+        bundle_price_paise: 19900,
+        discount: '60% OFF',
+        description: 'Keep your Air Force 1s crease-free for only ₹199 (Save ₹300)',
+      },
+    ],
   },
   {
     id: 'prod_010',
@@ -164,6 +234,9 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Shoe2.png',
     rating: 4.8,
     reviews_count: 890,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['6', '7', '8', '9', '10', '11'], required: true },
+    ],
   },
   {
     id: 'prod_011',
@@ -179,6 +252,9 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Shoe3.png',
     rating: 4.7,
     reviews_count: 420,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['7', '8', '9', '10', '11'], required: true },
+    ],
   },
   {
     id: 'prod_012',
@@ -194,6 +270,9 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Shoe4.png',
     rating: 4.6,
     reviews_count: 310,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['6', '7', '8', '9', '10', '11', '12'], required: true },
+    ],
   },
   {
     id: 'prod_017',
@@ -209,6 +288,9 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Image1.png',
     rating: 4.8,
     reviews_count: 670,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['7', '8', '9', '10', '11'], required: true },
+    ],
   },
   {
     id: 'prod_022',
@@ -224,6 +306,9 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Image2.png',
     rating: 4.7,
     reviews_count: 389,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['6', '7', '8', '9', '10', '11'], required: true },
+    ],
   },
   {
     id: 'prod_023',
@@ -239,6 +324,20 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Image3.png',
     rating: 4.5,
     reviews_count: 530,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['6', '7', '8', '9', '10', '11'], required: true },
+    ],
+    offers: [
+      {
+        id: 'offer_hrx_socks',
+        type: 'bundle_add_on',
+        name: 'HRX Anti-Blister Performance Socks (3-Pack)',
+        original_price_paise: 49900,
+        bundle_price_paise: 19900,
+        discount: '60% OFF',
+        description: 'Add breathable performance running socks for only ₹199 (Save ₹300)',
+      },
+    ],
   },
   {
     id: 'prod_024',
@@ -254,6 +353,20 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Image4.png',
     rating: 4.4,
     reviews_count: 720,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['6', '7', '8', '9', '10', '11', '12'], required: true },
+    ],
+    offers: [
+      {
+        id: 'offer_campus_cleaner',
+        type: 'bundle_add_on',
+        name: 'Campus Quick-Clean Shoe Spray (150ml)',
+        original_price_paise: 29900,
+        bundle_price_paise: 9900,
+        discount: '67% OFF',
+        description: 'Add instant shoe cleaning foam spray for only ₹99 (Save ₹200)',
+      },
+    ],
   },
   {
     id: 'prod_025',
@@ -269,5 +382,8 @@ export const FOOTWEAR_PRODUCTS: Product[] = [
     image: '/assets/urbanstride/Shoe1.png',
     rating: 4.9,
     reviews_count: 850,
+    required_options: [
+      { key: 'size', label: 'UK / India Shoe Size', type: 'select', available_options: ['7', '8', '9', '10', '11'], required: true },
+    ],
   },
 ];

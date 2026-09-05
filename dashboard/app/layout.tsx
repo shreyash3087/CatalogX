@@ -3,7 +3,7 @@ import Script from 'next/script';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Razorpay Agent Dashboard — Buildathon Program',
+  title: 'Razorpay Buildathon — CatalogX Agentic Commerce',
   description: 'Real-time audit trail and conversational in-app checkout for AI-powered autonomous commerce.',
 };
 

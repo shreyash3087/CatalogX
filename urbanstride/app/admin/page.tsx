@@ -1,53 +1,44 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-type UserProfile = {
-  name: string;
-  email: string;
-  avatar: string;
-  isLoggedIn: boolean;
-};
-
-declare global {
-  interface Window {
-    google?: any;
-    __gsiAdminInit?: boolean;
-  }
-}
-
-export function parseGoogleJwt(token: string) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (e) {
-    return null;
-  }
-}
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { useAuth } from '@/context/AuthContext';
+import UserAvatar from '@/components/UserAvatar';
 
 export default function MerchantAdminPage() {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const router = useRouter();
+  const { user: authUser, isAdmin, isLoading } = useAuth();
+  const [authChecked, setAuthChecked] = useState(false);
+
   const [metrics, setMetrics] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'inventory'>('overview');
   const [stockUpdatingId, setStockUpdatingId] = useState<string | null>(null);
-  const googleBtnRef = useRef<HTMLDivElement>(null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
-  const ROOT_ADMINS = ['shreyash3087@gmail.com', 'owner@catalogx.ai'];
-  const isRootAdmin = user?.isLoggedIn && ROOT_ADMINS.includes(user.email.toLowerCase());
+  // ── Auth guard ──────────────────────────────────────────
+  useEffect(() => {
+    if (isLoading) return;
+    if (!authUser) {
+      router.replace('/login?next=/admin');
+      return;
+    }
+    if (!isAdmin) {
+      router.replace('/');
+      return;
+    }
+    setAuthChecked(true);
+  }, [router, authUser, isAdmin, isLoading]);
 
-  // 1. Fetch Metrics & Data
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // ── Data fetching (on-demand) ────────────────
   const fetchData = async () => {
+    setIsRefreshing(true);
     try {
       const res = await fetch('/api/admin/metrics');
       const data = await res.json();
@@ -59,93 +50,14 @@ export default function MerchantAdminPage() {
     } catch (e) {
       console.error('Failed to fetch admin metrics:', e);
     } finally {
-      setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
+    if (!authChecked) return;
     fetchData();
-    const interval = setInterval(fetchData, 5000); // 5s live polling
-    return () => clearInterval(interval);
-  }, []);
-
-  // 2. Initialize Google Sign-In
-  useEffect(() => {
-    const clientId = '69996615501-m4eclgq75cl1qd0q6kqckspg7q066epg.apps.googleusercontent.com';
-    let checkInterval: NodeJS.Timeout;
-
-    const initGsi = () => {
-      if (typeof window === 'undefined' || !window.google?.accounts?.id) return;
-
-      if (!window.__gsiAdminInit) {
-        window.google.accounts.id.initialize({
-          client_id: clientId,
-          callback: (response: any) => {
-            if (response?.credential) {
-              const data = parseGoogleJwt(response.credential);
-              if (data) {
-                const u: UserProfile = {
-                  name: data.name || data.given_name || 'Admin',
-                  email: data.email || '',
-                  avatar: data.picture || '',
-                  isLoggedIn: true,
-                };
-                setUser(u);
-                localStorage.setItem('urbanstride_admin_user', JSON.stringify(u));
-              }
-            }
-          },
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
-        window.__gsiAdminInit = true;
-      }
-
-      if (googleBtnRef.current) {
-        googleBtnRef.current.innerHTML = '';
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'filled_black',
-          size: 'large',
-          shape: 'pill',
-          text: 'signin_with',
-          logo_alignment: 'left',
-          width: 260,
-        });
-      }
-    };
-
-    const stored = localStorage.getItem('urbanstride_admin_user');
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch (e) {}
-    }
-
-    if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-      initGsi();
-    } else {
-      checkInterval = setInterval(() => {
-        if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-          clearInterval(checkInterval);
-          initGsi();
-        }
-      }, 200);
-    }
-
-    return () => {
-      if (checkInterval) clearInterval(checkInterval);
-    };
-  }, []);
-
-  const handleSignOut = () => {
-    setUser(null);
-    localStorage.removeItem('urbanstride_admin_user');
-    if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-      try {
-        window.google.accounts.id.disableAutoSelect();
-      } catch (e) {}
-    }
-  };
+  }, [authChecked]);
 
   const handleStockUpdate = async (productId: string, newStock: number) => {
     setStockUpdatingId(productId);
@@ -156,299 +68,461 @@ export default function MerchantAdminPage() {
         body: JSON.stringify({ product_id: productId, stock: newStock }),
       });
       await fetchData();
-    } catch (e) {
+    } catch {
       alert('Failed to update stock');
     } finally {
       setStockUpdatingId(null);
     }
   };
 
+  // KPI data
+  const kpiData = [
+    {
+      label: 'Agent Discoveries',
+      value: metrics?.catalog_discoveries ?? '—',
+      sub: 'Hits on /.well-known/agent-catalog',
+      color: '#f59e0b',
+    },
+    {
+      label: 'Gross Agent Revenue',
+      value: metrics ? `₹${Number(metrics.revenue_inr || 0).toLocaleString('en-IN')}` : '—',
+      sub: `From ${metrics?.orders_paid ?? 0} completed payments`,
+      color: '#10b981',
+    },
+    {
+      label: 'Total Orders',
+      value: metrics?.orders_created ?? '—',
+      sub: 'Via CatalogX AI Buyer Agent',
+      color: '#3b82f6',
+    },
+    {
+      label: 'Semantic Searches',
+      value: metrics?.search_queries ?? '—',
+      sub: 'Product vector search queries',
+      color: '#8b5cf6',
+    },
+  ];
+
+  // ── Loading / redirecting state ─────────────────────────
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-[#0f0f0f] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#070A10] text-slate-100 flex flex-col font-sans">
-      {/* Top Admin Header */}
-      <header className="bg-[#0B0F19] border-b border-slate-800/80 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center text-black font-extrabold text-sm">
-              ⚡
-            </div>
-            <span className="text-base font-black text-white tracking-tight">UrbanStride Admin</span>
-          </Link>
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-orange-500/10 text-orange-400 border border-orange-500/30">
-            Database: urbanstride_db
-          </span>
-        </div>
+    <div className="min-h-screen flex flex-col bg-[#F4F3F0] text-[#0f0f0f] font-sans">
+      {/* Shared Navbar — no cart on admin */}
+      <Navbar />
 
-        <div className="flex items-center gap-4">
-          <Link href="/" className="text-xs text-slate-400 hover:text-white transition-colors">
-            ← Back to Store
-          </Link>
+      <main className="flex-1 max-w-[1200px] mx-auto px-6 sm:px-8 py-8 w-full space-y-8">
 
-          {user?.isLoggedIn && (
-            <div className="flex items-center gap-3 pl-4 border-l border-slate-800">
-              <div className="text-right">
-                <div className="text-xs font-bold text-white">{user.name}</div>
-                <div className="text-[10px] text-slate-400 font-mono">{user.email}</div>
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="px-3 py-1 rounded-lg border border-slate-700 hover:border-red-500 hover:text-red-400 text-xs font-semibold transition-colors"
-              >
-                Sign Out
-              </button>
+        {/* Admin Page Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-[#E8E6E2]">
+          <div>
+            <div className="text-[10px] font-bold tracking-[0.22em] uppercase text-[#aaa] mb-1">
+              Merchant Dashboard
             </div>
-          )}
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {/* Authentication Gate / Lock Screen */}
-        {!user?.isLoggedIn ? (
-          <div className="max-w-md mx-auto my-16 p-8 rounded-3xl bg-[#0E1524] border border-slate-800 text-center space-y-6 shadow-2xl">
-            <div className="w-16 h-16 rounded-2xl bg-orange-500/20 border border-orange-500 text-orange-400 text-2xl flex items-center justify-center mx-auto">
-              🔒
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">Merchant Admin Authentication</h2>
-              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                Sign in with your authorized Google Account to access the UrbanStride merchant dashboard, live orders ledger, and stock controls.
-              </p>
-            </div>
-
-            <div className="flex justify-center pt-2">
-              <div ref={googleBtnRef} className="min-h-[44px]" />
-            </div>
-
-            <div className="text-[10px] text-slate-500 border-t border-slate-800/80 pt-4">
-              Restricted to root administrator accounts (<span className="text-slate-400 font-mono">shreyash3087@gmail.com</span>)
+            <h1 className="font-heading font-bold text-[34px] text-[#0f0f0f] uppercase tracking-tight leading-none">
+              Store Analytics
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5 text-[11px] text-[#aaa]">
+              <i className="fa-solid fa-database text-[10px]" />
+              <span className="font-mono">urbanstride_db</span>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-50 text-amber-600 border border-amber-200 ml-1">
+                LIVE
+              </span>
             </div>
           </div>
-        ) : !isRootAdmin ? (
-          <div className="max-w-md mx-auto my-16 p-8 rounded-3xl bg-rose-950/20 border border-rose-900/50 text-center space-y-4 shadow-2xl">
-            <div className="w-14 h-14 rounded-2xl bg-rose-500/20 border border-rose-500 text-rose-400 text-2xl flex items-center justify-center mx-auto">
-              ⛔
-            </div>
-            <h2 className="text-lg font-bold text-white">Access Restricted</h2>
-            <p className="text-xs text-slate-300">
-              You are signed in as <strong className="text-white font-mono">{user.email}</strong>, but this account is not authorized as a Root Admin for UrbanStride Footwear.
-            </p>
+
+          {/* Admin action & user pill */}
+          <div className="flex items-center gap-3">
             <button
-              onClick={handleSignOut}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold"
+              onClick={() => fetchData()}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-neutral-50 active:scale-95 border border-[#E0DDD9] text-[#0f0f0f] rounded-xl text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
             >
-              Sign In with Another Account
+              <svg className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
             </button>
-          </div>
-        ) : (
-          /* Authorized Root Admin Dashboard */
-          <div className="space-y-8 animate-fade-in">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Agent Discovery Counter */}
-              <div className="p-5 rounded-2xl bg-[#0D1322] border border-slate-800 shadow-sm space-y-1">
-                <div className="text-[11px] font-bold uppercase text-orange-400 font-mono">Agent Discoveries</div>
-                <div className="text-3xl font-black text-white tracking-tight">
-                  {metrics?.catalog_discoveries || 0}
-                </div>
-                <div className="text-[11px] text-slate-400">Hits on /.well-known/agent-catalog</div>
-              </div>
 
-              {/* Total Revenue */}
-              <div className="p-5 rounded-2xl bg-[#0D1322] border border-slate-800 shadow-sm space-y-1">
-                <div className="text-[11px] font-bold uppercase text-emerald-400 font-mono">Gross Agent Revenue</div>
-                <div className="text-3xl font-black text-white tracking-tight">
-                  ₹{Number(metrics?.revenue_inr || 0).toLocaleString('en-IN')}.00
-                </div>
-                <div className="text-[11px] text-slate-400">From {metrics?.orders_paid || 0} completed payments</div>
-              </div>
-
-              {/* Orders Created */}
-              <div className="p-5 rounded-2xl bg-[#0D1322] border border-slate-800 shadow-sm space-y-1">
-                <div className="text-[11px] font-bold uppercase text-blue-400 font-mono">Total Orders Created</div>
-                <div className="text-3xl font-black text-white tracking-tight">
-                  {metrics?.orders_created || 0}
-                </div>
-                <div className="text-[11px] text-slate-400">Via CatalogX AI Buyer Agent</div>
-              </div>
-
-              {/* Search Queries */}
-              <div className="p-5 rounded-2xl bg-[#0D1322] border border-slate-800 shadow-sm space-y-1">
-                <div className="text-[11px] font-bold uppercase text-purple-400 font-mono">Semantic Searches</div>
-                <div className="text-3xl font-black text-white tracking-tight">
-                  {metrics?.search_queries || 0}
-                </div>
-                <div className="text-[11px] text-slate-400">Product vector search queries</div>
-              </div>
-            </div>
-
-            {/* Tabs Navigation */}
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'overview'
-                    ? 'bg-orange-500 text-black shadow-md shadow-orange-500/20'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                📊 Store Overview & Feed
-              </button>
-              <button
-                onClick={() => setActiveTab('orders')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'orders'
-                    ? 'bg-orange-500 text-black shadow-md shadow-orange-500/20'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                📦 Orders Ledger ({orders.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('inventory')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'inventory'
-                    ? 'bg-orange-500 text-black shadow-md shadow-orange-500/20'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                🏷️ Live Stock & Inventory ({products.length})
-              </button>
-            </div>
-
-            {/* Tab 1: Overview & Live Orders Table */}
-            {activeTab === 'overview' || activeTab === 'orders' ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                    Autonomous Orders Ledger (urbanstride_db.orders)
-                  </h3>
-                  <button
-                    onClick={fetchData}
-                    className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-xs text-slate-300 cursor-pointer"
-                  >
-                    🔄 Refresh
-                  </button>
-                </div>
-
-                <div className="bg-[#0D1322] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                  {orders.length === 0 ? (
-                    <div className="py-16 text-center text-slate-500 space-y-2">
-                      <div className="text-3xl">📦</div>
-                      <div className="text-xs font-bold">No orders recorded in urbanstride_db yet</div>
-                      <p className="text-[11px] text-slate-600 max-w-sm mx-auto">
-                        Ask the CatalogX buyer agent on Port 3000 to buy running shoes, and the order will appear here in real time.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                          <tr className="bg-[#090E17] text-[10.5px] uppercase font-bold text-slate-400 border-b border-slate-800">
-                            <th className="py-3.5 px-4">Order ID</th>
-                            <th className="py-3.5 px-4">Item & Size</th>
-                            <th className="py-3.5 px-4">Customer & Address</th>
-                            <th className="py-3.5 px-4">Amount</th>
-                            <th className="py-3.5 px-4">Status</th>
-                            <th className="py-3.5 px-4">Payment ID</th>
-                            <th className="py-3.5 px-4">Created</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800/60">
-                          {orders.map((o) => (
-                            <tr key={o.orderId} className="hover:bg-slate-900/40 transition-colors">
-                              <td className="py-3.5 px-4 font-mono font-bold text-orange-400 select-all">
-                                {o.orderId}
-                              </td>
-                              <td className="py-3.5 px-4">
-                                <div className="font-bold text-white">{o.productName}</div>
-                                <div className="text-[10.5px] text-slate-400 font-mono">Size: {o.size || 'N/A'}</div>
-                              </td>
-                              <td className="py-3.5 px-4">
-                                <div className="font-semibold text-slate-200">{o.customer?.name} ({o.customer?.phone})</div>
-                                <div className="text-[10.5px] text-slate-400">
-                                  {o.shippingAddress?.street}, {o.shippingAddress?.city} - {o.shippingAddress?.postal_code}
-                                </div>
-                              </td>
-                              <td className="py-3.5 px-4 font-mono font-bold text-white">
-                                ₹{(o.amountPaise / 100).toLocaleString('en-IN')}.00
-                              </td>
-                              <td className="py-3.5 px-4">
-                                {o.status === 'PAID' ? (
-                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                    PAID
-                                  </span>
-                                ) : (
-                                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                                    CREATED
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 font-mono text-[10.5px] text-slate-400 select-all">
-                                {o.razorpayPaymentId || '—'}
-                              </td>
-                              <td className="py-3.5 px-4 text-[10.5px] text-slate-500">
-                                {new Date(o.createdAt).toLocaleTimeString()}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              /* Tab 2: Inventory & Stock Controls */
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                  Inventory & Stock Management (urbanstride_db.inventory)
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {products.map((p) => (
-                    <div
-                      key={p.id}
-                      className="p-5 rounded-2xl bg-[#0D1322] border border-slate-800 flex items-center justify-between gap-4"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-[10px] text-orange-400 uppercase font-mono font-bold">{p.brand}</div>
-                        <div className="text-sm font-bold text-white truncate">{p.name}</div>
-                        <div className="text-xs text-slate-400 font-mono">₹{(p.price_paise / 100).toLocaleString('en-IN')}</div>
-                      </div>
-
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`px-2 py-1 rounded text-xs font-bold font-mono ${
-                          p.stock <= 0 ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'
-                        }`}>
-                          {p.stock} in stock
-                        </span>
-
-                        <button
-                          onClick={() => handleStockUpdate(p.id, p.stock + 10)}
-                          disabled={stockUpdatingId === p.id}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold cursor-pointer disabled:opacity-50"
-                          title="Restock +10 units"
-                        >
-                          +10
-                        </button>
-                        <button
-                          onClick={() => handleStockUpdate(p.id, 0)}
-                          disabled={stockUpdatingId === p.id}
-                          className="px-2 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 text-xs font-bold cursor-pointer"
-                          title="Set to Out of Stock"
-                        >
-                          0
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+            {authUser && (
+              <div className="flex items-center gap-3 bg-white border border-[#E0DDD9] rounded-xl px-4 py-2.5 shadow-xs">
+                <UserAvatar
+                  src={authUser.avatar}
+                  name={authUser.name}
+                  size="lg"
+                  borderColor="border-emerald-500"
+                />
+                <div className="hidden sm:block">
+                  <div className="text-[12px] font-bold text-[#0f0f0f] leading-tight flex items-center gap-1.5">
+                    <span>{authUser.name}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Active"></span>
+                  </div>
+                  <div className="text-[10px] text-[#aaa] leading-tight font-mono">{authUser.email}</div>
                 </div>
               </div>
             )}
           </div>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {kpiData.map((kpi) => (
+            <div key={kpi.label} className="admin-card space-y-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: kpi.color }}>
+                {kpi.label}
+              </div>
+              <div className="text-[30px] font-black text-[#0f0f0f] tracking-tight leading-none">
+                {kpi.value}
+              </div>
+              <div className="text-[11px] text-[#999]">{kpi.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b border-[#E8E6E2]">
+          <div className="flex items-center gap-0">
+            {[
+              { id: 'overview', label: 'Store Overview', icon: 'fa-chart-bar' },
+              { id: 'orders', label: `Orders (${orders.length})`, icon: 'fa-box' },
+              { id: 'inventory', label: `Inventory (${products.length})`, icon: 'fa-tag' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-5 py-2.5 text-[12px] font-bold transition-all cursor-pointer border-b-2 -mb-[1px] flex items-center gap-1.5 ${
+                  activeTab === tab.id
+                    ? 'border-[#0f0f0f] text-[#0f0f0f]'
+                    : 'border-transparent text-[#aaa] hover:text-[#555]'
+                }`}
+              >
+                <i className={`fa-solid ${tab.icon} text-[10px]`} />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Orders / Overview */}
+        {(activeTab === 'overview' || activeTab === 'orders') && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-[12px] font-bold text-[#0f0f0f] uppercase tracking-wider inline">
+                  Store Orders Ledger
+                </h3>
+                <span className="text-[#aaa] font-mono ml-2 text-[10px]">urbanstride_db.orders</span>
+              </div>
+              <button
+                onClick={fetchData}
+                className="px-3.5 py-1.5 rounded-lg bg-white border border-[#E0DDD9] hover:bg-[#F8F7F4] text-[12px] text-[#555] cursor-pointer transition-colors flex items-center gap-1.5"
+              >
+                <i className="fa-solid fa-rotate text-[10px]" /> Refresh
+              </button>
+            </div>
+
+            <div className="bg-white border border-[#E8E6E2] rounded-2xl overflow-hidden shadow-sm">
+              {orders.length === 0 ? (
+                <div className="py-14 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-[#EEECEA] border border-[#D0CEC9] flex items-center justify-center mx-auto">
+                    <i className="fa-solid fa-box text-[16px] text-[#bbb]" />
+                  </div>
+                  <div className="text-[12.5px] font-bold text-[#555]">No orders recorded yet</div>
+                  <p className="text-[11.5px] text-[#bbb] max-w-sm mx-auto">
+                    Orders and customer purchases will appear here in real time.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[12px] border-collapse">
+                    <thead>
+                      <tr className="bg-[#F8F7F4] text-[11px] uppercase font-bold text-[#aaa] border-b border-[#E8E6E2]">
+                        <th className="py-3.5 px-4">Order ID</th>
+                        <th className="py-3.5 px-4">Item &amp; Size</th>
+                        <th className="py-3.5 px-4">Customer</th>
+                        <th className="py-3.5 px-4">Amount</th>
+                        <th className="py-3.5 px-4">Status</th>
+                        <th className="py-3.5 px-4">Payment ID</th>
+                        <th className="py-3.5 px-4">Created</th>
+                        <th className="py-3.5 px-4 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F0EDE9]">
+                      {orders.map((o) => (
+                        <tr key={o.orderId} className="hover:bg-[#FAFAF9] transition-colors">
+                          <td className="py-3.5 px-4 font-mono font-bold text-amber-600 select-all text-[11px]">
+                            {o.orderId}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-[#0f0f0f]">{o.productName}</div>
+                            <div className="text-[10px] text-[#aaa] font-mono">
+                              {o.brand ? `${o.brand} · ` : ''}Size: {o.size || 'Standard'} {o.quantity > 1 ? `(x${o.quantity})` : ''}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-[#333]">
+                              {o.customer?.name || 'Customer'}
+                            </div>
+                            <div className="text-[10px] text-[#aaa]">
+                              {[o.shippingAddress?.street, o.shippingAddress?.city].filter(Boolean).join(', ') || 'Primary Address'} {o.customer?.phone ? `· ${o.customer.phone}` : ''}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-[#0f0f0f]">
+                            ₹{(o.amountPaise / 100).toLocaleString('en-IN')}.00
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {o.status === 'PAID' ? (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                PAID
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                CREATED
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-[10px] text-[#aaa] select-all">
+                            {o.razorpayPaymentId || '—'}
+                          </td>
+                          <td className="py-3.5 px-4 text-[10px] text-[#bbb]">
+                            {new Date(o.createdAt).toLocaleTimeString()}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              onClick={() => setSelectedOrder(o)}
+                              className="px-3 py-1.5 rounded-lg bg-[#0f0f0f] hover:bg-[#252525] active:scale-95 text-white font-bold text-[11px] inline-flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                            >
+                              <svg className="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              <span>View Details</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Order Details Modal Popup */}
+        {selectedOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl border border-[#E0DDD9] max-w-2xl w-full max-h-[90vh] overflow-y-auto overflow-hidden">
+              {/* Modal Header */}
+              <div className="px-6 py-5 border-b border-[#E8E6E2] flex items-center justify-between bg-[#FAF9F6]">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#0f0f0f] text-white flex items-center justify-center font-bold text-sm">
+                    US
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-[15px] font-black text-[#0f0f0f] tracking-tight">
+                        Order Breakdown
+                      </h3>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          selectedOrder.status === 'PAID'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}
+                      >
+                        {selectedOrder.status}
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-mono text-[#888]">
+                      {selectedOrder.orderId}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="w-8 h-8 rounded-lg bg-[#EDEBE6] hover:bg-[#E0DDD9] text-[#666] flex items-center justify-center text-sm font-bold cursor-pointer transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-5">
+                {/* 1. Item Information */}
+                <div className="p-4 rounded-xl bg-[#F8F7F4] border border-[#E8E6E2] space-y-3">
+                  <div className="text-[11px] font-bold text-[#888] uppercase tracking-wider">
+                    Purchased Item
+                  </div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-[11px] font-bold font-mono text-amber-600 uppercase">
+                        {selectedOrder.brand || 'UrbanStride'}
+                      </div>
+                      <div className="text-[15px] font-bold text-[#0f0f0f]">
+                        {selectedOrder.productName || 'Footwear Product'}
+                      </div>
+                      <div className="text-[12px] text-[#666] mt-1 space-x-3">
+                        <span>Size: <strong className="text-[#0f0f0f]">{selectedOrder.size || 'Standard'}</strong></span>
+                        {selectedOrder.color && <span>· Color: <strong className="text-[#0f0f0f]">{selectedOrder.color}</strong></span>}
+                        <span>· Quantity: <strong className="text-[#0f0f0f]">{selectedOrder.quantity || 1}</strong></span>
+                      </div>
+                      {selectedOrder.productId && (
+                        <div className="text-[10px] font-mono text-[#aaa] mt-1">
+                          Product ID: {selectedOrder.productId}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[16px] font-black text-[#0f0f0f] font-mono">
+                        ₹{(selectedOrder.amountPaise / 100).toLocaleString('en-IN')}.00
+                      </div>
+                      <div className="text-[10px] text-emerald-600 font-bold">
+                        {selectedOrder.status === 'PAID' ? 'Amount Settled' : 'Payment Awaiting'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Customer & Delivery Address Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Customer Info */}
+                  <div className="p-4 rounded-xl border border-[#E8E6E2] bg-white space-y-2">
+                    <div className="text-[11px] font-bold text-[#888] uppercase tracking-wider flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Customer Details
+                    </div>
+                    <div className="text-[13px] font-bold text-[#0f0f0f]">
+                      {selectedOrder.customer?.name || 'Shreyash Srivastava'}
+                    </div>
+                    <div className="text-[11px] text-[#666] font-mono">
+                      {selectedOrder.customer?.email || 'shreyash3087@gmail.com'}
+                    </div>
+                    <div className="text-[11px] text-[#666]">
+                      Phone: <strong className="text-[#0f0f0f]">{selectedOrder.customer?.phone || '8707336921'}</strong>
+                    </div>
+                  </div>
+
+                  {/* Shipping Address */}
+                  <div className="p-4 rounded-xl border border-[#E8E6E2] bg-white space-y-2">
+                    <div className="text-[11px] font-bold text-[#888] uppercase tracking-wider flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Shipping Address
+                    </div>
+                    <div className="text-[12px] font-medium text-[#0f0f0f] leading-relaxed">
+                      {selectedOrder.shippingAddress?.street && <span>{selectedOrder.shippingAddress.street},<br /></span>}
+                      <span>
+                        {[selectedOrder.shippingAddress?.city, selectedOrder.shippingAddress?.state].filter(Boolean).join(', ')}
+                        {selectedOrder.shippingAddress?.postal_code ? ` - ${selectedOrder.shippingAddress.postal_code}` : ''}
+                      </span>
+                      <br />
+                      <span className="text-[11px] text-[#888]">{selectedOrder.shippingAddress?.country || 'India'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Payment & Channel Audit */}
+                <div className="p-4 rounded-xl border border-[#E8E6E2] bg-[#FAF9F6] space-y-2 text-[11px] font-mono">
+                  <div className="text-[10.5px] font-bold text-[#888] uppercase tracking-wider font-sans">
+                    Razorpay &amp; Agent Channel Audit
+                  </div>
+                  <div className="flex items-center justify-between text-[#555] py-1 border-b border-[#E8E6E2]">
+                    <span>Razorpay Order ID</span>
+                    <span className="font-bold text-[#0f0f0f] select-all">{selectedOrder.razorpayOrderId || selectedOrder.orderId}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[#555] py-1 border-b border-[#E8E6E2]">
+                    <span>Payment ID / Token</span>
+                    <span className="font-bold text-emerald-700 select-all">{selectedOrder.razorpayPaymentId || 'Pending'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[#555] py-1 border-b border-[#E8E6E2]">
+                    <span>Agent Session</span>
+                    <span className="text-[#888] select-all">{selectedOrder.sessionId || 'Autonomous'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[#555] pt-1">
+                    <span>Order Placed At</span>
+                    <span className="text-[#888]">{new Date(selectedOrder.createdAt).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 bg-[#F8F7F4] border-t border-[#E8E6E2] flex items-center justify-end">
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="px-5 py-2 rounded-xl bg-[#0f0f0f] hover:bg-[#252525] text-white font-bold text-xs cursor-pointer transition-colors shadow-sm"
+                >
+                  Close Details
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Inventory */}
+        {activeTab === 'inventory' && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-[12px] font-bold text-[#0f0f0f] uppercase tracking-wider inline">
+                Inventory &amp; Stock Management
+              </h3>
+              <span className="text-[#aaa] font-mono ml-2 text-[10px]">urbanstride_db.inventory</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {products.map((p) => (
+                <div key={p.id} className="admin-card flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-amber-600 uppercase font-mono font-bold">{p.brand}</div>
+                    <div className="text-[13px] font-bold text-[#0f0f0f] truncate">{p.name}</div>
+                    <div className="text-[11px] text-[#aaa] font-mono">
+                      ₹{(p.price_paise / 100).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span
+                      className={`px-2.5 py-1 rounded text-[10.5px] font-bold ${
+                        p.stock <= 0
+                          ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      }`}
+                    >
+                      {p.stock} left
+                    </span>
+                    <button
+                      onClick={() => handleStockUpdate(p.id, p.stock + 10)}
+                      disabled={stockUpdatingId === p.id}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#F8F7F4] border border-[#E0DDD9] hover:bg-[#EEECEA] text-[12px] font-bold cursor-pointer disabled:opacity-50 transition-colors"
+                      title="Restock +10"
+                    >
+                      +10
+                    </button>
+                    <button
+                      onClick={() => handleStockUpdate(p.id, 0)}
+                      disabled={stockUpdatingId === p.id}
+                      className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[12px] font-bold cursor-pointer transition-colors"
+                      title="Set Out of Stock"
+                    >
+                      0
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

@@ -82,46 +82,59 @@ async function createResponse(input, options = {}) {
   const messages = Array.isArray(input) ? input : [{ role: 'user', content: input }];
   const prevId = options.previous_response_id || options.prev_response_id || null;
 
-  try {
-    const req = {
-      model: deployment,
-      input: messages,
-      ...(prevId ? { previous_response_id: prevId } : {}),
-    };
+  let lastError = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const req = {
+        model: deployment,
+        input: messages,
+        ...(prevId ? { previous_response_id: prevId } : {}),
+      };
 
-    const response = await client.responses.create(req);
-    const id = response.id;
-    const text = response.output_text || (response.output?.[0]?.content?.[0]?.text) || '';
+      const response = await client.responses.create(req);
+      const id = response.id;
+      const text = response.output_text || (response.output?.[0]?.content?.[0]?.text) || '';
 
-    let data;
-    if (options.json) {
-      const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      let data;
+      if (options.json) {
+        const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+        try {
+          data = JSON.parse(cleaned);
+        } catch (err) {
+          // json parse fallback
+        }
+      }
+
+      return { id, text, data };
+    } catch (err) {
+      lastError = err;
       try {
-        data = JSON.parse(cleaned);
-      } catch (err) {
-        // json parse fallback
+        // Fallback to chat.completions
+        const response = await client.chat.completions.create({
+          model: deployment,
+          messages,
+          temperature: options.temperature ?? 0.2,
+          max_completion_tokens: options.max_completion_tokens ?? 2048,
+        });
+        const text = response.choices[0].message.content;
+        let data;
+        if (options.json) {
+          const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+          try {
+            data = JSON.parse(cleaned);
+          } catch (e) {}
+        }
+        return { id: response.id || `fallback_${Date.now()}`, text, data };
+      } catch (fallbackErr) {
+        lastError = fallbackErr;
+        if (attempt < 3) {
+          await new Promise((r) => setTimeout(r, attempt * 500));
+        }
       }
     }
-
-    return { id, text, data };
-  } catch (err) {
-    // Graceful fallback to chat.completions if responses API has any issue
-    const response = await client.chat.completions.create({
-      model: deployment,
-      messages,
-      temperature: options.temperature ?? 0.2,
-      max_completion_tokens: options.max_completion_tokens ?? 2048,
-    });
-    const text = response.choices[0].message.content;
-    let data;
-    if (options.json) {
-      const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-      try {
-        data = JSON.parse(cleaned);
-      } catch (e) {}
-    }
-    return { id: response.id || `fallback_${Date.now()}`, text, data };
   }
+
+  throw lastError || new Error('Connection error: Failed to communicate with LLM provider.');
 }
 
 /**
@@ -178,7 +191,27 @@ async function chat(messages, options = {}) {
  * @param {object} options - Optional overrides: previous_response_id
  * @returns {Promise<object>} - Parsed JSON object with attached response_id
  */
-async function chatJSON(messages, options = {}) {
+async function chatJSON(input, arg2 = {}, arg3 = {}) {
+  let messages = [];
+  let options = {};
+
+  if (typeof input === 'string' && typeof arg2 === 'string') {
+    messages = [
+      { role: 'system', content: input },
+      { role: 'user', content: arg2 },
+    ];
+    options = arg3 || {};
+  } else if (typeof input === 'string') {
+    messages = [{ role: 'user', content: input }];
+    options = arg2 || {};
+  } else if (Array.isArray(input)) {
+    messages = input;
+    options = arg2 || {};
+  } else {
+    messages = [];
+    options = arg2 || {};
+  }
+
   const hasSystemMsg = messages.some(m => m.role === 'system');
   const jsonMessages = hasSystemMsg
     ? messages.map(m => m.role === 'system'
