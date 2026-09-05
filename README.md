@@ -10,6 +10,16 @@
 
 ---
 
+## 🚀 Live Demo
+
+| App | Description | Production URL |
+|-----|-------------|----------------|
+| **CatalogX Dashboard** | Autonomous Buyer Agent UI + Audit Feed + Mandates | [catalogx-dashboard.vercel.app](https://catalogx-dashboard.vercel.app) |
+| **UrbanStride Footwear** | Merchant Storefront #1 — Federated catalog & checkout | [urbanstride.vercel.app](https://urbanstride.vercel.app) |
+| **TechCart Electronics** | Merchant Storefront #2 — Federated catalog & checkout | [techcart-xi.vercel.app](https://techcart-xi.vercel.app) |
+
+---
+
 ## Executive Overview
 
 **CatalogX** is an autonomous e-commerce infrastructure that enables **any merchant** to become instantly transactable by AI buyer agents. Built on top of **Razorpay payment APIs**, CatalogX implements the open **Agent Commerce Protocol (ACP/UAP)** to provide machine-readable catalog discovery (`/.well-known/agent-catalog`), product-driven option reconciliation, bounded spend guardrails, and real-time settlement via pre-authorized e-mandates.

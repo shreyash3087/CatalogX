@@ -158,7 +158,12 @@ async function appendEvent(userId, sessionId, event) {
     const database = await getMongoDb();
     const eventObj = {
       id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      // `action` is the canonical field; `type` is an alias so the frontend switch works
       action: event.action,
+      type: event.action,
+      // `session_id` is required for frontend filtering by active session
+      session_id: sessionId,
+      user_id: userId || 'user_shreyash_001',
       input_data: event.input_data || null,
       output_data: event.output_data || null,
       reasoning: event.reasoning || '',

@@ -95,6 +95,10 @@ export function useAgentFeed(wsUrl: string = '/api/events') {
   useEffect(() => {
     let isMounted = true;
 
+    // Clear stale events whenever the session (URL) changes
+    setEvents([]);
+    setWsState('connecting');
+
     // Check if WS is available or fallback to HTTP polling
     const isWebSocketUrl = wsUrl.startsWith('ws://') || wsUrl.startsWith('wss://');
 
