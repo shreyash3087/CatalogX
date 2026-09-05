@@ -133,11 +133,11 @@ sequenceDiagram
 - **Budget-Bounded Cross-Sell**: If the bundle price fits within user budget bounds, it is presented in chat with 1-click upgrade options.
 
 ### Requirement 3: "The Bar: Every money action explainable, bounded and gated"
-- **3-Tier Spend Governor**:
-  - **Tier 1 (≤ ₹1,500)**: `AUTO` approval via pre-authorized e-mandate.
-  - **Tier 2 (₹1,501 – ₹5,000)**: `REVIEW` requiring 1-click human consent.
-  - **Tier 3 (> ₹5,000)**: `HIGH_VALUE_2FA` requiring mandatory OTP verification.
-- **Audit Trail**: Every decision is logged with `action`, `input_data`, `output_data`, `reasoning`, and timestamp to MongoDB Atlas.
+- **3-Tier Spend Governor (Deterministic Financial Boundaries)**:
+  - **Tier 1 (≤ ₹1,500 — Autonomous e-Mandate)**: `AUTO` execution using pre-authorized Razorpay recurring tokens / NPCI UPI AutoPay variable mandates. Provides zero-friction checkout for daily micro-transactions within the user's spending ceiling.
+  - **Tier 2 (₹1,501 – ₹5,000 — 1-Click Human Consent)**: `REVIEW` mode within standard daily budget limits. The agent prepares the cart, locks pricing, and presents a 1-click human confirmation modal without re-entering payment credentials.
+  - **Tier 3 (> ₹5,000 — Mandatory 2FA OTP & Security Circuit Breaker)**: `HIGH_VALUE_2FA` gating aligned with RBI e-mandate regulations and anti-prompt injection defenses. High-value transactions legally and architecturally require stepped-up Two-Factor Authentication (Bank OTP / 3DS challenge), preventing rogue agent wallet-draining attacks.
+- **Complete Step-by-Step Audit Trail**: Every decision, intent classification, constraint resolution, spend policy evaluation, and API payload is logged with `action`, `input_data`, `output_data`, `reasoning`, and timestamp to MongoDB Atlas (`catalogx_db.chat_sessions`).
 
 ### e-Mandates: Test-Mode Simulation vs Production Architecture
 > **Note on Test-Mode Implementation vs Live Production Rails:**
